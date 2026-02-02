@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import prisma from '../config/prisma';
+import User from '../models/User';
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
     let token;
@@ -19,10 +19,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     try {
         const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
 
-        const user = await prisma.user.findUnique({
-            where: { id: decoded.id },
-            include: { organization: true },
-        });
+        const user = await User.findById(decoded.id).populate('organization');
 
         if (!user) {
             return res.status(401).json({ success: false, message: 'User no longer exists' });
@@ -32,6 +29,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
         next();
     } catch (error) {
+        console.error('Auth Middleware Error:', error);
         return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
     }
 };

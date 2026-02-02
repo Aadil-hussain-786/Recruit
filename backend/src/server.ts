@@ -8,9 +8,11 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/recruit-ai
 
 const startServer = async () => {
     try {
+        console.log('Connecting to MongoDB via Mongoose...');
         await mongoose.connect(MONGO_URI);
         console.log('MongoDB Connected');
 
+        console.log('Starting Express server...');
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
@@ -20,4 +22,5 @@ const startServer = async () => {
     }
 };
 
+console.log('Starting server process...');
 startServer();
