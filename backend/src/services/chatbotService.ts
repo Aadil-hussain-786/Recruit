@@ -1,10 +1,17 @@
-import { openai } from './aiService';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const chatbotService = {
     /**
      * Generate chatbot response based on candidate query
      */
     async generateResponse(userMessage: string, context: any = {}): Promise<string> {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
         const systemPrompt = `You are RecruitAI's helpful assistant. You help candidates with their application queries.
         
         Common topics:
@@ -18,16 +25,16 @@ export const chatbotService = {
         
         Be professional, friendly, and concise. If you don't have specific information, acknowledge this and suggest contacting the recruiter directly.`;
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userMessage }
-            ],
-            max_tokens: 300
-        });
+        const prompt = `${systemPrompt}\n\nUser: ${userMessage}`;
 
-        return response.choices[0].message.content || "I'm sorry, I couldn't process that. Please contact our support team.";
+        try {
+            const result = await model.generateContent(prompt);
+            const responseText = result.response.text();
+            return responseText || "I'm sorry, I couldn't process that. Please contact our support team.";
+        } catch (error) {
+            console.error('Chatbot error:', error);
+            return "I'm sorry, I couldn't process that. Please contact our support team.";
+        }
     },
 
     /**

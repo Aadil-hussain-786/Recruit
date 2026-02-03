@@ -1,4 +1,9 @@
-import { aiService } from './aiService';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const communicationService = {
     /**
@@ -23,7 +28,11 @@ export const communicationService = {
      * Generate AI response suggestion for a candidate message
      */
     async suggestResponse(candidateProfile: any, jobRequirements: string, context: string): Promise<string> {
-        const prompt = `
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const systemPrompt = "You are an expert recruitment coordinator. Write helpful, concise, and professional responses.";
+
+        const userPrompt = `
             Candidate: ${candidateProfile.firstName} ${candidateProfile.lastName}
             Current Role: ${candidateProfile.currentTitle}
             Skills: ${candidateProfile.skills.join(', ')}
@@ -35,15 +44,14 @@ export const communicationService = {
             Suggest a professional, warm, and engaging response to the candidate.
         `;
 
-        // We use aiService to call GPT
-        const response = await (aiService as any).openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: "You are an expert recruitment coordinator. Write helpful, concise, and professional responses." },
-                { role: "user", content: prompt }
-            ]
-        });
+        const prompt = `${systemPrompt}\n\n${userPrompt}`;
 
-        return response.choices[0].message.content || '';
+        try {
+            const result = await model.generateContent(prompt);
+            return result.response.text() || '';
+        } catch (error) {
+            console.error('Error generating response suggestion:', error);
+            return '';
+        }
     }
 };
