@@ -25,7 +25,11 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
             return res.status(401).json({ success: false, message: 'User no longer exists' });
         }
 
-        (req as any).user = user;
+        // Add organizationId as a string properties for compatibility with controllers
+        const userObj = user.toObject();
+        (userObj as any).organizationId = user.organization._id ? user.organization._id.toString() : (user.organization as any).toString();
+
+        (req as any).user = userObj;
 
         next();
     } catch (error) {

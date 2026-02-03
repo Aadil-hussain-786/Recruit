@@ -13,7 +13,7 @@ export interface IJob extends Document {
         currency: string;
     };
     numberOfOpenings: number;
-    status: 'draft' | 'active' | 'paused' | 'closed';
+    status: 'draft' | 'active' | 'published' | 'paused' | 'closed';
     postedBy: mongoose.Types.ObjectId;
     hiringTeam: mongoose.Types.ObjectId[];
     screeningQuestions: any[];
@@ -22,6 +22,7 @@ export interface IJob extends Document {
     responsibilities: string[];
     applicationDeadline?: Date;
     externalPostings: any[];
+    embedding?: number[];
     organization: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
@@ -31,8 +32,8 @@ const JobSchema: Schema = new Schema(
     {
         title: { type: String, required: true, trim: true },
         description: { type: String, required: true },
-        department: { type: String, required: true, trim: true },
-        location: { type: String, required: true, trim: true },
+        department: { type: String, required: false, trim: true },
+        location: { type: String, required: false, trim: true },
         employmentType: {
             type: String,
             enum: ['full-time', 'part-time', 'contract', 'internship'],
@@ -51,7 +52,7 @@ const JobSchema: Schema = new Schema(
         numberOfOpenings: { type: Number, default: 1 },
         status: {
             type: String,
-            enum: ['draft', 'active', 'paused', 'closed'],
+            enum: ['draft', 'active', 'published', 'paused', 'closed'],
             default: 'draft',
         },
         postedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -62,6 +63,7 @@ const JobSchema: Schema = new Schema(
         responsibilities: [String],
         applicationDeadline: Date,
         externalPostings: Array,
+        embedding: { type: [Number], default: [] },
         organization: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
     },
     { timestamps: true }

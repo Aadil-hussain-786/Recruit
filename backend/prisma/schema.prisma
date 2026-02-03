@@ -49,6 +49,8 @@ model Organization {
   jobs         Job[]
   applications Application[]
   interviews   Interview[]
+
+  @@map("organizations")
 }
 
 model User {
@@ -65,6 +67,8 @@ model User {
   updatedAt       DateTime @updatedAt
 
   interviews Interview[]
+
+  @@map("users")
 }
 
 model Job {
@@ -79,6 +83,8 @@ model Job {
   updatedAt       DateTime @updatedAt
 
   applications Application[]
+
+  @@map("jobs")
 }
 
 model Application {
@@ -93,6 +99,8 @@ model Application {
   updatedAt       DateTime @updatedAt
 
   interviews Interview[]
+
+  @@map("applications")
 }
 
 model Interview {
@@ -109,4 +117,6 @@ model Interview {
   meetingLink     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@map("interviews")
 }

@@ -52,6 +52,7 @@ const CandidateSchema: Schema = new Schema(
         expectedSalary: Number,
         noticePeriod: String,
         parsedData: Object,
+        embedding: { type: [Number], default: [] },
         createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         organization: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
     },

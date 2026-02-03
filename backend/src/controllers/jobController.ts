@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
-import prisma from '../config/prisma';
-import { JobStatus } from '@prisma/client';
+import Job from '../models/Job';
+import Candidate from '../models/Candidate';
 import { aiService } from '../services/aiService';
 import { matchingService } from '../services/matchingService';
 import { jobBoardService } from '../services/jobBoardService';
-import Candidate from '../models/Candidate';
 
 // @desc    Publish job to external boards
 // @route   POST /api/jobs/:id/publish
@@ -14,7 +13,21 @@ export const publishJobToExternal = async (req: Request, res: Response) => {
         const organizationId = (req as any).user.organizationId as string;
         const jobId = req.params.id as string;
 
+        // Verify job exists and belongs to organization
+        const job = await Job.findOne({ _id: jobId, organization: organizationId });
+
+        if (!job) {
+            return res.status(404).json({ success: false, message: 'Job not found' });
+        }
+
         const results = await jobBoardService.publishToExternalBoards(jobId, organizationId);
+
+        // Update status to 'published' if successful
+        const anySuccess = results && Array.isArray(results) && results.some((r: any) => r.success);
+        if (anySuccess) {
+            job.status = 'published';
+            await job.save();
+        }
 
         res.status(200).json({
             success: true,
@@ -33,8 +46,8 @@ export const generateAIJD = async (req: Request, res: Response) => {
     try {
         const { role, seniority, keySkills, tone } = req.body;
 
-        if (!role || !seniority || !keySkills) {
-            return res.status(400).json({ success: false, message: 'Please provide role, seniority, and key skills' });
+        if (!role || !seniority || !keySkills || !Array.isArray(keySkills)) {
+            return res.status(400).json({ success: false, message: 'Please provide role, seniority, and key skills (as an array)' });
         }
 
         const jd = await aiService.generateJD(role, seniority, keySkills, tone);
@@ -58,15 +71,13 @@ export const matchCandidates = async (req: Request, res: Response) => {
         const jobId = req.params.id as string;
 
         // Get the job and its embedding
-        const job = await prisma.job.findFirst({
-            where: { id: jobId, organizationId },
-        });
+        const job = await Job.findOne({ _id: jobId, organization: organizationId });
 
         if (!job) {
             return res.status(404).json({ success: false, message: 'Job not found' });
         }
 
-        if (!job.embedding) {
+        if (!job.embedding || job.embedding.length === 0) {
             return res.status(400).json({ success: false, message: 'Job requirements have not been indexed for matching' });
         }
 
@@ -108,10 +119,7 @@ export const getJobs = async (req: Request, res: Response) => {
     try {
         const organizationId = (req as any).user.organizationId as string;
 
-        const jobs = await prisma.job.findMany({
-            where: { organizationId },
-            orderBy: { createdAt: 'desc' },
-        });
+        const jobs = await Job.find({ organization: organizationId }).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -130,19 +138,35 @@ export const getJobs = async (req: Request, res: Response) => {
 export const createJob = async (req: Request, res: Response) => {
     try {
         const organizationId = (req as any).user.organizationId as string;
-        const { title, description, status } = req.body;
+        const userId = (req as any).user._id as string;
+        const { title, description, status, department, location } = req.body;
+
+        // Validate required fields
+        if (!title || !description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Title and description are required'
+            });
+        }
 
         // Generate embedding for the job description
-        const embedding = await aiService.generateEmbeddings(`${title}\n${description}`);
+        let embedding: number[] = [];
+        try {
+            embedding = await aiService.generateEmbeddings(`${title}\n${description}`);
+        } catch (embeddingError: any) {
+            console.error('Embedding generation error:', embeddingError);
+            // Non-fatal error for job creation, but log it
+        }
 
-        const job = await prisma.job.create({
-            data: {
-                title,
-                description,
-                status: (status as JobStatus) || 'DRAFT',
-                organizationId,
-                embedding: embedding as any,
-            },
+        const job = await Job.create({
+            title,
+            description,
+            department: department || 'Not Specified',
+            location: location || 'Remote',
+            status: status || 'draft',
+            organization: organizationId,
+            postedBy: userId,
+            embedding,
         });
 
         res.status(201).json({
@@ -150,8 +174,12 @@ export const createJob = async (req: Request, res: Response) => {
             data: job
         });
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error('Job creation error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create job',
+            error: error.message
+        });
     }
 };
 
@@ -161,11 +189,9 @@ export const createJob = async (req: Request, res: Response) => {
 export const getJob = async (req: Request, res: Response) => {
     try {
         const organizationId = (req as any).user.organizationId as string;
-        const job = await prisma.job.findFirst({
-            where: {
-                id: req.params.id as string,
-                organizationId,
-            },
+        const job = await Job.findOne({
+            _id: req.params.id,
+            organization: organizationId,
         });
 
         if (!job) {
@@ -191,11 +217,9 @@ export const updateJob = async (req: Request, res: Response) => {
         const { title, description, status } = req.body;
 
         // Ensure job belongs to org
-        const job = await prisma.job.findFirst({
-            where: {
-                id: req.params.id as string,
-                organizationId,
-            },
+        const job = await Job.findOne({
+            _id: req.params.id,
+            organization: organizationId,
         });
 
         if (!job) {
@@ -203,28 +227,41 @@ export const updateJob = async (req: Request, res: Response) => {
         }
 
         // Regenerate embedding if title or description changed
-        let embedding = job.embedding;
-        if (title !== job.title || description !== job.description) {
-            embedding = await aiService.generateEmbeddings(`${title}\n${description}`) as any;
+        const titleChanged = title && title !== job.title;
+        const descriptionChanged = description && description !== job.description;
+
+        if (titleChanged || descriptionChanged) {
+            try {
+                const combinedText = `${title || job.title}\n${description || job.description}`;
+                req.body.embedding = await aiService.generateEmbeddings(combinedText);
+            } catch (embeddingError: any) {
+                console.error('Embedding generation error during update:', embeddingError);
+            }
         }
 
-        const updatedJob = await prisma.job.update({
-            where: { id: req.params.id as string },
-            data: {
-                title,
-                description,
-                status: status as JobStatus,
-                embedding: embedding as any,
-            },
-        });
+        // Prevent illegal field updates
+        const updateData = { ...req.body };
+        delete updateData._id;
+        delete updateData.organization;
+        delete updateData.postedBy;
+
+        const updatedJob = await Job.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
 
         res.status(200).json({
             success: true,
             data: updatedJob
         });
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        console.error('Job update error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update job',
+            error: error.message
+        });
     }
 };
 
@@ -235,21 +272,16 @@ export const deleteJob = async (req: Request, res: Response) => {
     try {
         const organizationId = (req as any).user.organizationId as string;
 
-        // Ensure job belongs to org
-        const job = await prisma.job.findFirst({
-            where: {
-                id: req.params.id as string,
-                organizationId,
-            },
+        const job = await Job.findOne({
+            _id: req.params.id,
+            organization: organizationId,
         });
 
         if (!job) {
             return res.status(404).json({ success: false, message: 'Job not found or unauthorized' });
         }
 
-        await prisma.job.delete({
-            where: { id: req.params.id as string },
-        });
+        await Job.findByIdAndDelete(req.params.id);
 
         res.status(200).json({
             success: true,
@@ -268,11 +300,11 @@ export const getStats = async (req: Request, res: Response) => {
     try {
         const organizationId = (req as any).user.organizationId as string;
 
-        const totalJobs = await prisma.job.count({ where: { organizationId } });
-        const publishedJobs = await prisma.job.count({ where: { organizationId, status: 'PUBLISHED' } });
-        const draftJobs = await prisma.job.count({ where: { organizationId, status: 'DRAFT' } });
+        const totalJobs = await Job.countDocuments({ organization: organizationId });
+        const publishedJobs = await Job.countDocuments({ organization: organizationId, status: { $in: ['active', 'published'] } });
+        const draftJobs = await Job.countDocuments({ organization: organizationId, status: 'draft' });
 
-        // Get candidates count from MongoDB
+        // Get candidates count
         const totalCandidates = await Candidate.countDocuments({ organization: organizationId });
 
         res.status(200).json({
