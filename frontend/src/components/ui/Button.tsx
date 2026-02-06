@@ -12,7 +12,7 @@ const buttonVariants = cva(
                 secondary: "bg-zinc-100 text-zinc-900 hover:bg-zinc-100/80",
                 ghost: "hover:bg-accent hover:text-accent-foreground",
                 link: "underline-offset-4 hover:underline text-primary",
-                premium: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg",
+                premium: "bg-white text-black hover:bg-zinc-50 border border-zinc-200 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-300",
             },
             size: {
                 default: "h-10 px-4 py-2",

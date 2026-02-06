@@ -38,7 +38,7 @@ export default function JobsPage() {
     const [newJob, setNewJob] = useState({
         title: "",
         description: "",
-        status: "PUBLISHED"
+        status: "published"
     });
 
     useEffect(() => {
@@ -71,16 +71,17 @@ export default function JobsPage() {
 
     const handleCreateJob = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log("Submitting job:", newJob);
         try {
             const res = await api.post('/jobs', newJob);
             if (res.data.success) {
                 setShowCreateModal(false);
                 fetchJobs();
-                setNewJob({ title: "", description: "", status: "PUBLISHED" });
+                setNewJob({ title: "", description: "", status: "published" });
             }
         } catch (err: any) {
             console.error(err);
-            setError("Failed to create job listing.");
+            setError(err.response?.data?.message || err.message || "Failed to create job listing.");
         }
     };
 
@@ -88,7 +89,7 @@ export default function JobsPage() {
         setSelectedJob(job);
         setIsMatching(true);
         try {
-            const res = await api.get(`/jobs/${job.id}/match`);
+            const res = await api.get(`/jobs/${job._id}/match`);
             if (res.data.success) {
                 setMatches(res.data.data);
                 setBiasAnalysis(res.data.biasAnalysis);
@@ -245,14 +246,14 @@ export default function JobsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {jobs.length > 0 ? jobs.map((job) => (
-                        <div key={job.id} className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col">
+                        <div key={job._id} className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                                     <Briefcase size={20} />
                                 </div>
                                 <span className={cn(
                                     "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                                    job.status === "PUBLISHED" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                                    job.status === "published" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
                                 )}>
                                     {job.status}
                                 </span>
@@ -270,7 +271,7 @@ export default function JobsPage() {
                                         size="sm"
                                         variant="ghost"
                                         className="h-8 w-8 p-0 text-zinc-400 hover:text-indigo-600"
-                                        onClick={() => handlePublishJob(job.id)}
+                                        onClick={() => handlePublishJob(job._id)}
                                         title="Publish to boards"
                                     >
                                         <Share size={14} />

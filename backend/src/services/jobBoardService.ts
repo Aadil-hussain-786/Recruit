@@ -1,31 +1,33 @@
 import axios from 'axios';
-import prisma from '../config/prisma';
+import Job from '../models/Job';
+import Organization from '../models/Organization';
 
 export const jobBoardService = {
     /**
      * Distribute a job to external boards via webhooks
      */
     async publishToExternalBoards(jobId: string, organizationId: string): Promise<any> {
-        const job = await prisma.job.findFirst({
-            where: { id: jobId, organizationId },
-        });
+        const job = await Job.findOne({ _id: jobId, organization: organizationId });
 
         if (!job) throw new Error('Job not found');
 
         // Fetch organization settings to get webhook URLs
-        const org = await prisma.organization.findUnique({
-            where: { id: organizationId },
-        });
+        const org = await Organization.findById(organizationId);
 
         const settings = org?.settings as any;
         const webhooks = settings?.jobWebhooks || [];
+
+        // If no webhooks configured, return empty success
+        if (webhooks.length === 0) {
+            return [{ success: true, message: 'No external boards configured' }];
+        }
 
         const results = await Promise.all(webhooks.map(async (url: string) => {
             try {
                 const response = await axios.post(url, {
                     event: 'job.published',
                     data: {
-                        id: job.id,
+                        id: job._id,
                         title: job.title,
                         description: job.description,
                         organization: org?.name,

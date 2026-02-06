@@ -87,7 +87,7 @@ export default function DashboardPage() {
                             <Filter size={16} />
                             Filter
                         </Button>
-                        <Button variant="premium" className="gap-2">
+                        <Button variant="premium" className="gap-2" onClick={() => router.push('/jobs')}>
                             <Plus size={16} />
                             Create Job
                         </Button>

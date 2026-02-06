@@ -27,7 +27,11 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
         // Add organizationId as a string properties for compatibility with controllers
         const userObj = user.toObject();
-        (userObj as any).organizationId = user.organization._id ? user.organization._id.toString() : (user.organization as any).toString();
+        if (user.organization) {
+            (userObj as any).organizationId = user.organization._id ? user.organization._id.toString() : (user.organization as any).toString();
+        } else {
+            console.warn(`User ${user._id} has no organization assigned`);
+        }
 
         (req as any).user = userObj;
 

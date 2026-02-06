@@ -13,7 +13,7 @@ export interface IJob extends Document {
         currency: string;
     };
     numberOfOpenings: number;
-    status: 'draft' | 'active' | 'published' | 'paused' | 'closed';
+    status: 'draft' | 'active' | 'published' | 'paused' | 'closed' | 'PUBLISHED' | 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'CLOSED';
     postedBy: mongoose.Types.ObjectId;
     hiringTeam: mongoose.Types.ObjectId[];
     screeningQuestions: any[];
@@ -52,7 +52,7 @@ const JobSchema: Schema = new Schema(
         numberOfOpenings: { type: Number, default: 1 },
         status: {
             type: String,
-            enum: ['draft', 'active', 'published', 'paused', 'closed'],
+            enum: ['draft', 'active', 'published', 'paused', 'closed', 'PUBLISHED', 'DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED'],
             default: 'draft',
         },
         postedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },

@@ -8,7 +8,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
                     <div className="col-span-1 md:col-span-2">
                         <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm">
                                 <Briefcase size={18} />
                             </div>
                             <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -22,17 +22,17 @@ export default function Footer() {
                     <div>
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Product</h3>
                         <ul className="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                            <li><Link href="/jobs" className="hover:text-indigo-600">Jobs</Link></li>
-                            <li><Link href="/candidates" className="hover:text-indigo-600">Candidates</Link></li>
-                            <li><Link href="/pricing" className="hover:text-indigo-600">Pricing</Link></li>
+                            <li><Link href="/jobs" className="hover:text-zinc-900 dark:hover:text-zinc-200">Jobs</Link></li>
+                            <li><Link href="/candidates" className="hover:text-zinc-900 dark:hover:text-zinc-200">Candidates</Link></li>
+                            <li><Link href="/pricing" className="hover:text-zinc-900 dark:hover:text-zinc-200">Pricing</Link></li>
                         </ul>
                     </div>
                     <div>
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Company</h3>
                         <ul className="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                            <li><Link href="/about" className="hover:text-indigo-600">About</Link></li>
-                            <li><Link href="/contact" className="hover:text-indigo-600">Contact</Link></li>
-                            <li><Link href="/privacy" className="hover:text-indigo-600">Privacy</Link></li>
+                            <li><Link href="/about" className="hover:text-zinc-900 dark:hover:text-zinc-200">About</Link></li>
+                            <li><Link href="/contact" className="hover:text-zinc-900 dark:hover:text-zinc-200">Contact</Link></li>
+                            <li><Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-zinc-200">Privacy</Link></li>
                         </ul>
                     </div>
                 </div>

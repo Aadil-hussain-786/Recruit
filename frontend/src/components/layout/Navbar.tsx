@@ -31,10 +31,10 @@ export default function Navbar() {
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm">
                                 <Briefcase size={18} />
                             </div>
-                            <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                            <span className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 font-display uppercase italic">
                                 Recruit AI
                             </span>
                         </Link>
@@ -47,9 +47,9 @@ export default function Navbar() {
                                     key={item.name}
                                     href={item.href}
                                     className={cn(
-                                        "text-sm font-medium transition-colors hover:text-indigo-600",
+                                        "text-sm font-medium transition-colors hover:text-zinc-900 dark:hover:text-zinc-200",
                                         pathname === item.href
-                                            ? "text-indigo-600"
+                                            ? "text-zinc-900 dark:text-zinc-50 border-b-2 border-zinc-900 dark:border-zinc-50"
                                             : "text-zinc-600 dark:text-zinc-400"
                                     )}
                                 >
