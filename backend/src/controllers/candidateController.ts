@@ -159,3 +159,59 @@ export const deleteCandidate = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
+
+// @desc    Bulk fetch patterns for candidates (Resume Fetcher)
+// @route   POST /api/candidates/fetcher
+// @access  Private
+export const resumeFetcher = async (req: Request, res: Response) => {
+    try {
+        const { candidateIds } = req.body;
+        const organizationId = (req as any).user.organizationId as string;
+
+        if (!candidateIds || !Array.isArray(candidateIds)) {
+            return res.status(400).json({ success: false, message: 'Candidate IDs array required' });
+        }
+
+        const candidates = await Candidate.find({
+            _id: { $in: candidateIds },
+            organization: organizationId
+        });
+
+        const updatedCandidates = [];
+
+        for (const candidate of candidates) {
+            // If patterns already exist and not forced, we could skip, but let's assume forced for this feature
+            // We need some text to analyze. If we have parsedData, use that, otherwise use profile text.
+            const textToAnalyze = candidate.parsedData
+                ? JSON.stringify(candidate.parsedData)
+                : `${candidate.firstName} ${candidate.lastName} ${candidate.skills.join(' ')} ${candidate.currentTitle} ${candidate.currentCompany}`;
+
+            const patterns = await aiService.fetchStudentPatterns(textToAnalyze);
+
+            if (patterns) {
+                candidate.patterns = {
+                    technicalAptitude: patterns.technicalAptitude,
+                    leadershipPotential: patterns.leadershipPotential,
+                    culturalAlignment: patterns.culturalAlignment,
+                    creativity: patterns.creativity,
+                    confidence: patterns.confidence,
+                    notes: patterns.notes,
+                    interviewScript: patterns.interviewQuestions?.map((qObj: any) => ({
+                        question: qObj.question,
+                        answer: qObj.idealAnswer || "Follow-up required during interview."
+                    }))
+                };
+                await candidate.save();
+                updatedCandidates.push(candidate);
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: updatedCandidates
+        });
+    } catch (error: any) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error fetching patterns', error: error.message });
+    }
+};

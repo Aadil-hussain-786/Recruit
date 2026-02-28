@@ -23,8 +23,10 @@ export default function DashboardPage() {
     const router = useRouter();
     const [stats, setStats] = useState<any>(null);
     const [jobs, setJobs] = useState<any[]>([]);
+    const [insights, setInsights] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -50,6 +52,7 @@ export default function DashboardPage() {
                 ]);
 
                 setJobs(jobsRes.data.data);
+                setInsights(statsRes.data.data.recentInsights || []);
             } catch (err: any) {
                 setError("Failed to fetch dashboard data. Please ensure the backend is running.");
                 console.error(err);
@@ -128,6 +131,39 @@ export default function DashboardPage() {
                     ))}
                 </div>
 
+                {/* Neural Insights Section */}
+                {insights.length > 0 && (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                                <TrendingUp size={20} className="text-indigo-500" />
+                                Latest Neural Insights
+                            </h2>
+                            <Button variant="ghost" size="sm" onClick={() => router.push('/candidates')}>Explore all patterns</Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {insights.map((insight, idx) => (
+                                <div
+                                    key={idx}
+                                    className="p-5 bg-gradient-to-br from-indigo-500/5 to-transparent border border-indigo-500/10 rounded-2xl hover:border-indigo-500/30 transition-all cursor-pointer group"
+                                    onClick={() => router.push('/candidates')}
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500/70">{insight.candidateName}</div>
+                                        <div className="text-[10px] text-zinc-400">{new Date(insight.date).toLocaleDateString()}</div>
+                                    </div>
+                                    <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 italic leading-relaxed group-hover:text-zinc-900 dark:group-hover:text-zinc-200 transition-colors">
+                                        "{insight.summary}"
+                                    </p>
+                                    <div className="mt-4 flex gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
+                                        {[...Array(5)].map((_, i) => <div key={i} className="h-0.5 w-4 bg-indigo-500 rounded-full" />)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Recent Jobs Table */}
                 <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                     <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
@@ -147,13 +183,17 @@ export default function DashboardPage() {
                             </thead>
                             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                                 {jobs.length > 0 ? jobs.map((job) => (
-                                    <tr key={job._id} className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                    <tr
+                                        key={job._id}
+                                        className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                                        onClick={() => router.push(`/jobs?jobId=${job._id}`)}
+                                    >
                                         <td className="whitespace-nowrap px-6 py-4 font-medium text-zinc-900 dark:text-zinc-50">{job.title}</td>
                                         <td className="whitespace-nowrap px-6 py-4 text-zinc-600 dark:text-zinc-400">{job.department}</td>
                                         <td className="whitespace-nowrap px-6 py-4">
                                             <span className={cn(
                                                 "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                                                job.status === "active" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" :
+                                                job.status === "active" || job.status === "published" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" :
                                                     job.status === "closed" ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400" :
                                                         "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
                                             )}>
@@ -161,10 +201,38 @@ export default function DashboardPage() {
                                             </span>
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4 text-zinc-600 dark:text-zinc-400">{job.numberOfOpenings}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
-                                                <MoreVertical size={18} />
-                                            </button>
+                                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setMenuOpenId(menuOpenId === job._id ? null : job._id)}
+                                                    className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                                                >
+                                                    <MoreVertical size={18} />
+                                                </button>
+                                                {menuOpenId === job._id && (
+                                                    <div className="absolute right-0 top-8 z-50 w-48 rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900 p-1 animate-in fade-in zoom-in duration-200">
+                                                        <button
+                                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors"
+                                                            onClick={() => { setMenuOpenId(null); router.push('/jobs'); }}
+                                                        >
+                                                            <Briefcase size={14} className="text-zinc-400" /> View Details
+                                                        </button>
+                                                        <button
+                                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-zinc-700 dark:text-zinc-300 rounded-lg transition-colors"
+                                                            onClick={() => { setMenuOpenId(null); router.push('/candidates'); }}
+                                                        >
+                                                            <Users size={14} className="text-zinc-400" /> View Candidates
+                                                        </button>
+                                                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1" />
+                                                        <button
+                                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-lg transition-colors"
+                                                            onClick={() => { setMenuOpenId(null); /* Handle Delete if needed */ }}
+                                                        >
+                                                            <Plus size={14} className="rotate-45" /> Archive Listing
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 )) : (

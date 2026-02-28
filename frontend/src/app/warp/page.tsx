@@ -1,20 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import MagneticButton from "@/components/marketing/MagneticButton";
-import PaperStack from "@/components/marketing/PaperStack";
 import {
   Sparkles,
-  Users,
-  LineChart,
-  MessageSquare,
+  Workflow,
   Shield,
+  Cpu,
   Zap,
   Rocket,
+  Terminal,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function SectionHeading({ kicker, title, highlight }: { kicker?: string; title: string; highlight?: string }) {
   return (
@@ -57,76 +55,55 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   );
 }
 
-export default function Home() {
-  // Spotlight cursor values
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 300, damping: 40, mass: 0.4 });
-  const springY = useSpring(mouseY, { stiffness: 300, damping: 40, mass: 0.4 });
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-    };
-    window.addEventListener("pointermove", onMove);
-    return () => window.removeEventListener("pointermove", onMove);
-  }, [mouseX, mouseY]);
-
+export default function WarpPage() {
   return (
     <div className="bg-white text-black selection:bg-black selection:text-white">
       {/* Hero */}
       <section className="relative overflow-hidden">
-<div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(800px_400px_at_20%_0%,rgba(0,0,0,0.05),transparent)]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
-          {/* Spotlight that follows the cursor */}
-          <motion.div
-            style={{ x: springX, y: springY, translateX: "-50%", translateY: "-50%" }}
-            className="absolute top-0 left-0 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.06)_0%,transparent_60%)] mix-blend-multiply"
-          />
         </div>
         <div className="mx-auto max-w-6xl px-6 pt-28 pb-24 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-black/10 bg-white text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-600">
-              <Sparkles className="h-3.5 w-3.5" /> AI Recruiting
+              <Sparkles className="h-3.5 w-3.5" /> Agentic Development
             </div>
             <h1 className="mt-6 text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] font-display uppercase">
-              Engineer Your Talent
+              Warp — The Agentic
               <br className="hidden md:block" />
-              Pipeline.
+              Development Environment
             </h1>
             <p className="mt-6 text-lg md:text-xl text-zinc-600 max-w-2xl mx-auto">
-              Scale your engineering team with zero friction. Neural-weighted matching identifies and screens the top 1% of technical talent.
+              Build faster with an always-on AI pair‑agent that understands your repo, runs tools, and ships changes end‑to‑end.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-<Link href="/register">
-                <MagneticButton>
-                  <Button size="lg" variant="premium" className="rounded-none px-8 py-6 font-black tracking-[0.2em] uppercase">
-                    Start Hiring
-                  </Button>
-                </MagneticButton>
+              <Link href="/register">
+                <Button size="lg" variant="premium" className="rounded-none px-8 py-6 font-black tracking-[0.2em] uppercase">
+                  Get Started
+                </Button>
               </Link>
-<Link href="/jobs">
-                <MagneticButton>
-                  <Button size="lg" variant="outline" className="rounded-none px-8 py-6 font-black tracking-[0.05em] uppercase">
-                    Browse Jobs
-                  </Button>
-                </MagneticButton>
+              <Link href="/jobs">
+                <Button size="lg" variant="outline" className="rounded-none px-8 py-6 font-black tracking-[0.05em] uppercase">
+                  See it in action
+                </Button>
               </Link>
             </div>
           </motion.div>
         </div>
-</section>
-
-      {/* PaperStack scroll-pinned section */}
-      <PaperStack />
+      </section>
 
       {/* Trusted by */}
       <section className="border-y border-zinc-100 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-10">
           <div className="flex items-center justify-center gap-10 opacity-50">
-            {["Stripe", "Linear", "Vercel", "Scale", "Open Source Teams"].map((name) => (
+            {[
+              "Stripe",
+              "Linear",
+              "Vercel",
+              "Scale",
+              "Open Source Teams",
+            ].map((name) => (
               <span key={name} className="text-[10px] font-black uppercase tracking-[0.4em]">
                 {name}
               </span>
@@ -138,12 +115,24 @@ export default function Home() {
       {/* How it works */}
       <section className="bg-zinc-50 py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <SectionHeading kicker="How it works" title="From job post to hire" highlight="in days" />
+          <SectionHeading kicker="How it works" title="From repo to results" highlight="in minutes" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { step: "01", title: "Post & parse", desc: "We extract role signals and generate a precise candidate vector." },
-              { step: "02", title: "Match & message", desc: "AI ranks candidates and drafts outreach with context you approve." },
-              { step: "03", title: "Schedule & track", desc: "Move from shortlist to interview with integrated scheduling and notes." },
+              {
+                step: "01",
+                title: "Connect your repo",
+                desc: "Warp indexes your codebase, tools, and scripts so it can act safely in your project.",
+              },
+              {
+                step: "02",
+                title: "Plan with the agent",
+                desc: "It drafts changes, checks impact, and proposes a safe procedure before touching files.",
+              },
+              {
+                step: "03",
+                title: "Execute & verify",
+                desc: "Warp edits files, runs commands and tests, then summarizes diffs for review.",
+              },
             ].map((s, i) => (
               <motion.div
                 key={s.step}
@@ -168,14 +157,14 @@ export default function Home() {
       {/* Features */}
       <section className="bg-white py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <SectionHeading kicker="Capabilities" title="Everything you need" highlight="to scale hiring" />
+          <SectionHeading kicker="Capabilities" title="Everything you need" highlight="— built in" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Feature icon={Users} title="Smart sourcing" desc="Blend inbound + outbound with AI-curated shortlists and enrichment." />
-            <Feature icon={LineChart} title="Match scoring" desc="Neural scoring with transparent signals improves precision over time." />
-            <Feature icon={MessageSquare} title="1-click outreach" desc="Personalized drafts; send from your domain or export to your tools." />
-            <Feature icon={Shield} title="Privacy-first" desc="We store only what’s required; PII handling with least-privilege." />
-            <Feature icon={Zap} title="Fast iterations" desc="Adjust criteria and see updated matches instantly—no waiting." />
-            <Feature icon={Rocket} title="Hire faster" desc="From post to signed offer with less back-and-forth and fewer calls." />
+            <Feature icon={Workflow} title="Tool-aware planning" desc="Understands your scripts, package.json, and CI so plans are executable, not theoretical." />
+            <Feature icon={Shield} title="Guardrails by default" desc="Runs read-only first, summarizes intent, and asks before risky steps." />
+            <Feature icon={Cpu} title="Repo understanding" desc="Indexes files and symbols to reference code accurately across edits." />
+            <Feature icon={Zap} title="Fast iterations" desc="Edits, lints, and re-runs quickly with concise status updates." />
+            <Feature icon={Terminal} title="Commands that explain" desc="Every non-trivial command includes the why, so changes are auditable." />
+            <Feature icon={Rocket} title="From idea to PR" desc="Produces clean diffs and summaries ready for review." />
           </div>
         </div>
       </section>
@@ -188,14 +177,16 @@ export default function Home() {
               <div className="h-2 w-2 rounded-full bg-red-400" />
               <div className="h-2 w-2 rounded-full bg-yellow-400" />
               <div className="h-2 w-2 rounded-full bg-green-400" />
-              <span className="ml-2">recruit session</span>
+              <span className="ml-2">warp session</span>
             </div>
             <div className="p-6 font-mono text-[12px] leading-relaxed text-zinc-800 bg-[linear-gradient(180deg,rgba(0,0,0,0.02),transparent)]">
-              <div className="opacity-60">$ create job "Senior React Engineer"</div>
-              <div>• Parsing JD… done</div>
-              <div>• Generating candidate vector… done</div>
-              <div>• Top matches ready — 12 candidates</div>
-              <div className="opacity-60">$ open http://localhost:3000/jobs</div>
+              <div className="opacity-60">$ npx warp plan "Add marketing page at /warp"</div>
+              <div>• Analyze repo structure… done</div>
+              <div>• Create route /warp… done</div>
+              <div>• Implement sections… in progress</div>
+              <div className="opacity-60">$ git diff --stat</div>
+              <div> frontend/src/app/warp/page.tsx | +420</div>
+              <div className="opacity-60">$ open http://localhost:3000/warp</div>
             </div>
           </div>
         </div>
@@ -205,14 +196,12 @@ export default function Home() {
       <section className="bg-black text-white py-28 text-center">
         <div className="mx-auto max-w-6xl px-6">
           <h3 className="text-5xl md:text-7xl font-black uppercase tracking-tight font-display mb-8">
-            Your next 10x hire is waiting
+            Ship with an agentic workflow
           </h3>
-<Link href="/register">
-            <MagneticButton>
-              <Button size="lg" variant="premium" className="bg-zinc-100 text-black hover:bg-white rounded-none px-10 py-7 font-black tracking-[0.25em] uppercase">
-                Start free
-              </Button>
-            </MagneticButton>
+          <Link href="/register">
+            <Button size="lg" variant="premium" className="bg-zinc-100 text-black hover:bg-white rounded-none px-10 py-7 font-black tracking-[0.25em] uppercase">
+              Start free
+            </Button>
           </Link>
         </div>
       </section>
@@ -222,10 +211,10 @@ export default function Home() {
         <div className="mx-auto max-w-3xl px-6">
           <SectionHeading kicker="FAQ" title="Answers at a glance" />
           <div className="divide-y divide-zinc-200 border-t border-b">
-            <FaqItem q="Do I need any AI keys?" a="No. Everything works out of the box; connect your ATS or use built‑in flows." />
-            <FaqItem q="Is my data secure?" a="Yes. We apply role-based access, audit trails, and request redaction for PII." />
-            <FaqItem q="Can I import existing candidates?" a="Yes. CSV import and API are available from the dashboard." />
-            <FaqItem q="How much does it cost?" a="Simple per-seat pricing with a free trial—contact sales for volume." />
+            <FaqItem q="Does this replace my IDE?" a="No. Warp augments your existing tools and workflows. Use it alongside your editor and CI." />
+            <FaqItem q="Will it run commands automatically?" a="Only when you ask. For non-trivial steps it summarizes what will run and why before proceeding." />
+            <FaqItem q="How do I try it on my repo?" a="Create an account, connect your repository, and follow the guided setup. The agent will propose a safe plan before any edits." />
+            <FaqItem q="Is team usage supported?" a="Yes. You can invite teammates and review diffs together before merging." />
           </div>
         </div>
       </section>

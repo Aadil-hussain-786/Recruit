@@ -5,6 +5,11 @@ const PORT = process.env.PORT || 5000;
 console.log('PORT:', PORT);
 console.log('DATABASE_URL defined:', !!process.env.DATABASE_URL);
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/recruit-ai';
+// Debug: print sanitized Mongo URI source
+try {
+    const masked = MONGO_URI.replace(/(mongodb(?:\+srv)?:\/\/)([^:@]+):([^@]+)@/i, '$1***:***@');
+    console.log('Using MONGO_URI:', masked);
+} catch {}
 
 const startServer = async () => {
     try {

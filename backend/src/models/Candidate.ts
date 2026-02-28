@@ -21,6 +21,23 @@ export interface ICandidate extends Document {
     noticePeriod?: string;
     parsedData?: any;
     embedding?: number[];
+    patterns?: {
+        technicalAptitude: number;
+        leadershipPotential: number;
+        culturalAlignment: number;
+        creativity: number;
+        confidence: number;
+        notes: string[];
+        biasAnalysis?: {
+            score: number;
+            findings: string[];
+            suggestions: string[];
+        };
+        interviewScript?: {
+            question: string;
+            answer: string;
+        }[];
+    };
     createdBy: mongoose.Types.ObjectId;
     organization: mongoose.Types.ObjectId;
     createdAt: Date;
@@ -53,6 +70,25 @@ const CandidateSchema: Schema = new Schema(
         noticePeriod: String,
         parsedData: Object,
         embedding: { type: [Number], default: [] },
+        patterns: {
+            technicalAptitude: { type: Number, default: 0 },
+            leadershipPotential: { type: Number, default: 0 },
+            culturalAlignment: { type: Number, default: 0 },
+            creativity: { type: Number, default: 0 },
+            confidence: { type: Number, default: 0 },
+            notes: [String],
+            biasAnalysis: {
+                score: { type: Number, default: 100 },
+                findings: [String],
+                suggestions: [String]
+            },
+            interviewScript: [
+                {
+                    question: String,
+                    answer: String
+                }
+            ]
+        },
         createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         organization: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
     },

@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import * as dotenv from 'dotenv';
 
 // Load env vars
-dotenv.config();
+dotenv.config({ override: true });
 
 const app: Application = express();
 
@@ -16,6 +16,7 @@ import communicationRoutes from './routes/communication';
 import interviewRoutes from './routes/interview';
 import assessmentRoutes from './routes/assessment';
 import chatbotRoutes from './routes/chatbot';
+import publicRoutes from './routes/public';
 
 // Middleware
 app.use(express.json());
@@ -39,6 +40,7 @@ app.use('/api/communication', communicationRoutes);
 app.use('/api/interviews', interviewRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/public', publicRoutes);
 
 // Health Check Route
 app.get('/health', (req: Request, res: Response) => {

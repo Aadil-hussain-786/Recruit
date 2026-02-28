@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import prisma from '../config/prisma';
+import Application from '../models/Application';
+import Job from '../models/Job';
 
 // @desc    Get all applications for the organization
 // @route   GET /api/applications
@@ -8,13 +9,10 @@ export const getApplications = async (req: Request, res: Response) => {
     try {
         const organizationId = (req as any).user.organizationId;
 
-        const applications = await prisma.application.findMany({
-            where: { organizationId },
-            include: {
-                job: true,
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+        const applications = await Application.find({ organization: organizationId })
+            .populate('job')
+            .populate('candidate')
+            .sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -36,21 +34,17 @@ export const createApplication = async (req: Request, res: Response) => {
         const { jobId, candidateId, stage } = req.body;
 
         // Ensure job exists and belongs to org
-        const job = await prisma.job.findFirst({
-            where: { id: jobId, organizationId },
-        });
+        const job = await Job.findOne({ _id: jobId, organization: organizationId });
 
         if (!job) {
             return res.status(404).json({ success: false, message: 'Job not found or unauthorized' });
         }
 
-        const application = await prisma.application.create({
-            data: {
-                jobId,
-                candidateId,
-                stage: stage || 'APPLIED',
-                organizationId,
-            },
+        const application = await Application.create({
+            job: jobId,
+            candidate: candidateId,
+            stage: stage || 'applied',
+            organization: organizationId,
         });
 
         res.status(201).json({
@@ -71,18 +65,20 @@ export const updateApplicationStage = async (req: Request, res: Response) => {
         const organizationId = (req as any).user.organizationId;
         const { stage } = req.body;
 
-        const application = await prisma.application.findFirst({
-            where: { id: req.params.id as string, organizationId },
+        const application = await Application.findOne({
+            _id: req.params.id,
+            organization: organizationId
         });
 
         if (!application) {
             return res.status(404).json({ success: false, message: 'Application not found or unauthorized' });
         }
 
-        const updatedApplication = await prisma.application.update({
-            where: { id: req.params.id as string },
-            data: { stage: stage as any },
-        });
+        const updatedApplication = await Application.findByIdAndUpdate(
+            req.params.id,
+            { stage },
+            { new: true, runValidators: true }
+        );
 
         res.status(200).json({
             success: true,

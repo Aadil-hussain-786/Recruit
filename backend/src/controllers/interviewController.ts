@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { schedulingService } from '../services/schedulingService';
-import prisma from '../config/prisma';
 
 // @desc    Create scheduling link for application
 // @route   POST /api/interviews/schedule-link
@@ -17,7 +16,8 @@ export const createScheduleLink = async (req: Request, res: Response) => {
             data: { link }
         });
     } catch (error: any) {
-        res.status(500).json({ success: false, message: 'Error creating link' });
+        console.error('Error in createScheduleLink:', error);
+        res.status(500).json({ success: false, message: 'Error creating scheduling link' });
     }
 };
 

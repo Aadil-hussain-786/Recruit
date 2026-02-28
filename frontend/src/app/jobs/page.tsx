@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Button } from "@/components/ui/Button";
 import {
     Briefcase,
@@ -13,18 +13,20 @@ import {
     X,
     Target,
     Sparkles,
-    Share
+    Share,
+    Trash2
 } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import JDGenerator from "@/components/JDGenerator";
 import CandidateMatchList from "@/components/CandidateMatchList";
 
-export default function JobsPage() {
+function JobsContent() {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -33,6 +35,7 @@ export default function JobsPage() {
     const [matches, setMatches] = useState<any[]>([]);
     const [biasAnalysis, setBiasAnalysis] = useState<any>(null);
     const [isMatching, setIsMatching] = useState(false);
+    const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
     // New Job Form State
     const [newJob, setNewJob] = useState({
@@ -52,7 +55,17 @@ export default function JobsPage() {
         setLoading(true);
         try {
             const res = await api.get("/jobs");
-            setJobs(res.data.data);
+            const fetchedJobs = res.data.data;
+            setJobs(fetchedJobs);
+
+            // Handle jobId from URL
+            const jobId = searchParams.get('jobId');
+            if (jobId && fetchedJobs.length > 0) {
+                const jobToSelect = fetchedJobs.find((j: any) => j._id === jobId);
+                if (jobToSelect) {
+                    handleViewMatches(jobToSelect);
+                }
+            }
         } catch (err: any) {
             setError("Failed to fetch jobs listings.");
             console.error(err);
@@ -111,6 +124,17 @@ export default function JobsPage() {
         } catch (err: any) {
             console.error(err);
             setError("Failed to publish to external boards.");
+        }
+    };
+
+    const handleDeleteJob = async (jobId: string) => {
+        if (!confirm('Delete this job?')) return;
+        try {
+            await api.delete(`/jobs/${jobId}`);
+            fetchJobs();
+        } catch (err: any) {
+            console.error(err);
+            setError("Failed to delete job.");
         }
     };
 
@@ -206,7 +230,10 @@ export default function JobsPage() {
                                     <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Candidate Matches</h2>
                                     <p className="text-xs text-zinc-500 mt-1">Found top matches for: <span className="font-semibold">{selectedJob.title}</span></p>
                                 </div>
-                                <button onClick={() => setSelectedJob(null)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full">
+                                <button onClick={() => {
+                                    setSelectedJob(null);
+                                    router.replace('/jobs'); // Clear query param
+                                }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -266,25 +293,37 @@ export default function JobsPage() {
                                 <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
                                     Posted {new Date(job.createdAt).toLocaleDateString()}
                                 </span>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 relative">
                                     <Button
                                         size="sm"
                                         variant="ghost"
-                                        className="h-8 w-8 p-0 text-zinc-400 hover:text-indigo-600"
-                                        onClick={() => handlePublishJob(job._id)}
-                                        title="Publish to boards"
+                                        className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-600"
+                                        onClick={() => setMenuOpenId(menuOpenId === job._id ? null : job._id)}
+                                        title="More"
                                     >
-                                        <Share size={14} />
+                                        <MoreVertical size={16} />
                                     </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="gap-2 h-8 px-3 text-xs border-indigo-200 hover:border-indigo-400 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950"
-                                        onClick={() => handleViewMatches(job)}
-                                    >
-                                        <Target size={14} />
-                                        AI Candidates
-                                    </Button>
+                                    {menuOpenId === job._id && (
+                                        <div className="absolute right-0 top-8 z-50 w-44 rounded-md border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                                            <button className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => { setMenuOpenId(null); handleViewMatches(job); }}>
+                                                <Target size={14} /> View AI Matches
+                                            </button>
+                                            <button className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => {
+                                                const url = `${window.location.origin}/jobs/${job._id}/apply`;
+                                                navigator.clipboard.writeText(url);
+                                                alert("Link copied to clipboard!");
+                                                setMenuOpenId(null);
+                                            }}>
+                                                <Share size={14} /> Copy Application Link
+                                            </button>
+                                            <button className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => { setMenuOpenId(null); handlePublishJob(job._id); }}>
+                                                <Share size={14} /> Publish to Boards
+                                            </button>
+                                            <button className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => { setMenuOpenId(null); handleDeleteJob(job._id); }}>
+                                                <Trash2 size={14} /> Delete
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -296,5 +335,13 @@ export default function JobsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function JobsPage() {
+    return (
+        <Suspense fallback={<div className="flex h-[calc(100vh-64px)] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>}>
+            <JobsContent />
+        </Suspense>
     );
 }

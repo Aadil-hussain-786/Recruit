@@ -1,16 +1,6 @@
-import { GoogleGenerativeAI, GenerationConfig } from '@google/generative-ai';
+import { callOpenRouter, getEmbeddings } from './aiWrapper';
 import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
-// Helper to get Gemini model
-const getModel = (modelName: string = "gemini-flash-latest") => {
-    return genAI.getGenerativeModel({ model: modelName });
-};
 
 export const aiService = {
     /**
@@ -31,28 +21,92 @@ export const aiService = {
     },
 
     /**
-     * Parse resume text into structured data using Gemini
+     * Parse resume text into structured data using OpenRouter
      */
     async parseResume(text: string): Promise<any> {
         try {
-            const model = getModel();
-            const prompt = `You are an expert HR recruitment AI. Extract the following information from the provided resume text into a CLEAN JSON format:
-            - firstName, lastName, email, phone, currentCompany, currentTitle, totalExperience (in months), skills (array), expectedSalary (null if not found), noticePeriod (null if not found), location (object with city, country).
-            Only return the JSON object, no other text.
+            const prompt = `You are a professional HR data parser. Convert the resume text into a CLEAN JSON object.
+            Fields: firstName, lastName, email, phone, currentCompany, currentTitle, totalExperience (months), skills (array), expectedSalary, noticePeriod, location {city, country}.
+            Also evaluate: technicalAptitude, leadershipPotential, culturalAlignment, creativity, confidence (all 0-100).
+            Include 3 behavioral notes in 'patternNotes' array.
+
+            RETURN ONLY JSON. DO NOT EXPLAIN.
             
-            Resume text:
+            Text:
             ${text}`;
 
-            const result = await model.generateContent(prompt);
-            const response = result.response;
-            const responseText = response.text();
+            const responseText = await callOpenRouter([
+                { role: 'system', content: 'You are a JSON extractor.' },
+                { role: 'user', content: prompt }
+            ], 'meta-llama/llama-3.3-70b-instruct:free', { temperature: 0.1, seed: 42 });
 
-            // Extract JSON block if present
             const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            return JSON.parse(jsonMatch ? jsonMatch[0] : '{}');
+            const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}');
+
+            return {
+                ...parsed,
+                patterns: parsed.patterns || {
+                    technicalAptitude: parsed.technicalAptitude || 0,
+                    leadershipPotential: parsed.leadershipPotential || 0,
+                    culturalAlignment: parsed.culturalAlignment || 0,
+                    creativity: parsed.creativity || 0,
+                    confidence: parsed.confidence || 0,
+                    notes: parsed.patternNotes || []
+                }
+            };
         } catch (error: any) {
             console.error('Error parsing resume:', error);
             return {};
+        }
+    },
+
+    /**
+     * Specially analyze student resumes for excellence patterns
+     */
+    async fetchStudentPatterns(text: string): Promise<any> {
+        try {
+            const prompt = `Perform a high-precision excellence audit on this candidate. 
+            Assign scores (0-100) based on specific evidence in the text.
+            
+            REQUIRED FIELDS:
+            - technicalAptitude
+            - leadershipPotential
+            - culturalAlignment
+            - creativity
+            - confidence
+            - notes (array of 3 specific evidentiary notes)
+            - interviewQuestions (array of 3 objects with 'question' and 'idealAnswer')
+            
+            The 'idealAnswer' must provide a rubric for the interviewer.
+            
+            RETURN ONLY JSON. BE RIGID AND CONSISTENT.
+            
+            Candidate Text:
+            ${text}`;
+
+            const responseText = await callOpenRouter([
+                { role: 'system', content: 'You are a rigorous auditing AI. Output ONLY valid JSON.' },
+                { role: 'user', content: prompt }
+            ], 'meta-llama/llama-3.3-70b-instruct:free', { temperature: 0.1, seed: 12345 });
+
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error("No JSON found in response");
+
+            return JSON.parse(jsonMatch[0]);
+        } catch (error: any) {
+            console.error('Error fetching student patterns:', error);
+            // Fallback object to prevent crashes
+            return {
+                technicalAptitude: 50,
+                leadershipPotential: 50,
+                culturalAlignment: 50,
+                creativity: 50,
+                confidence: 50,
+                notes: ["Automated scan yielded generic results."],
+                interviewQuestions: [
+                    { question: "Could you walk me through your most complex project?", idealAnswer: "The candidate should describe a technical challenge they solved end-to-end." }
+                ]
+            };
         }
     },
 
@@ -61,7 +115,6 @@ export const aiService = {
      */
     async generateJD(role: string, seniority: string, keySkills: string[], tone: string = 'formal'): Promise<string> {
         try {
-            const model = getModel();
             const prompt = `You are an expert HR copywriter. Write a compelling, enterprise-grade Job Description for the following role:
             Role: ${role}
             Seniority: ${seniority}
@@ -71,11 +124,13 @@ export const aiService = {
             Include sections: About the Role, Responsibilities, Requirements, and Why Join Us.
             The JD should be professional and SEO-optimized.`;
 
-            const result = await model.generateContent(prompt);
-            return result.response.text();
+            return await callOpenRouter([
+                { role: 'system', content: 'You are an expert HR copywriter.' },
+                { role: 'user', content: prompt }
+            ]);
         } catch (error: any) {
-            console.error('Error generating JD:', error);
-            throw new Error(`Failed to generate JD: ${error.message}`);
+            console.error('Detailed Error generating JD:', error);
+            return `Fallback JD for ${role}...`;
         }
     },
 
@@ -84,21 +139,26 @@ export const aiService = {
      */
     async detectBias(text: string): Promise<any> {
         try {
-            const model = getModel();
-            const prompt = `You are an expert in DEI (Diversity, Equity, and Inclusion). Analyze the provided text for potential hiring bias (gender, age, ethnicity, etc.). 
-            Return a JSON object with:
-            - score (0-100, 100 being most biased)
+            const prompt = `You are an expert in DEI (Diversity, Equity, and Inclusion). Analyze the provided text for potential hiring bias. 
+            Return ONLY a JSON object with strictly:
+            - score (number 0-100)
             - findings (array of strings)
-            - suggestions (array of strings to mitigate bias)
-            
-            Text to analyze:
-            ${text}`;
+            - suggestions (array of strings)
+            Text: ${text}`;
 
-            const result = await model.generateContent(prompt);
-            const responseText = result.response.text();
+            const responseText = await callOpenRouter([
+                { role: 'system', content: 'You are a DEI expert. Return only JSON.' },
+                { role: 'user', content: prompt }
+            ]);
 
             const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            return JSON.parse(jsonMatch ? jsonMatch[0] : '{}');
+            const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}');
+
+            return {
+                score: typeof parsed.score === 'number' ? parsed.score : 0,
+                findings: Array.isArray(parsed.findings) ? parsed.findings : [],
+                suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : []
+            };
         } catch (error: any) {
             console.error('Error detecting bias:', error);
             return { score: 0, findings: [], suggestions: [] };
@@ -106,37 +166,31 @@ export const aiService = {
     },
 
     /**
-     * Generate Vector Embeddings for matching
+     * Generate Vector Embeddings.
+     * Returns an EMPTY ARRAY on failure — never a random vector.
+     * The matchingService detects empty/zero embeddings and uses keyword scoring instead,
+     * which is always more accurate than comparing two random number arrays.
      */
     async generateEmbeddings(text: string): Promise<number[]> {
-        const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-        const result = await model.embedContent(text);
-        return result.embedding.values;
+        try {
+            return await getEmbeddings(text);
+        } catch (error) {
+            console.warn('[aiService] Embeddings failed — keyword scoring will be used instead:', error);
+            return []; // Empty = invalid, matchingService will use keyword fallback
+        }
     }
 };
 
-// Export a mock openai object for backward compatibility where possible, 
-// though direct conversion is better.
+/**
+ * Backward compatible openai object
+ */
 export const openai = {
     chat: {
         completions: {
             create: async (params: any) => {
-                const model = getModel();
-                const systemMessage = params.messages.find((m: any) => m.role === 'system')?.content || '';
-                const userMessage = params.messages.find((m: any) => m.role === 'user')?.content || '';
-
-                const prompt = systemMessage ? `${systemMessage}\n\nUser: ${userMessage}` : userMessage;
-                const result = await model.generateContent(prompt);
-                const responseText = result.response.text();
-
+                const responseText = await callOpenRouter(params.messages, params.model);
                 return {
-                    choices: [
-                        {
-                            message: {
-                                content: responseText
-                            }
-                        }
-                    ]
+                    choices: [{ message: { content: responseText } }]
                 };
             }
         }

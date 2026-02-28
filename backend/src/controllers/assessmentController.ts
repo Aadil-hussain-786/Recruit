@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { assessmentService } from '../services/assessmentService';
-import prisma from '../config/prisma';
 import Candidate from '../models/Candidate';
 
 // @desc    Generate assessment quiz for a job
