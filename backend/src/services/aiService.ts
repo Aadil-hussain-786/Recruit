@@ -68,16 +68,20 @@ export const aiService = {
             const prompt = `Perform a high-precision excellence audit on this candidate. 
             Assign scores (0-100) based on specific evidence in the text.
             
-            REQUIRED FIELDS:
-            - technicalAptitude
-            - leadershipPotential
-            - culturalAlignment
-            - creativity
-            - confidence
-            - notes (array of 3 specific evidentiary notes)
+            REQUIRED FIELDS IN JSON:
+            - technicalAptitude (0-100)
+            - leadershipPotential (0-100)
+            - culturalAlignment (0-100)
+            - creativity (0-100)
+            - confidence (0-100)
+            - notes (array of 3 specific technical/behavioral observations)
             - interviewQuestions (array of 3 objects with 'question' and 'idealAnswer')
+            - hiddenBriefing (OBJECT with: 'vibe', 'theOneThing', 'probe', 'redFlags' (array))
             
-            The 'idealAnswer' must provide a rubric for the interviewer.
+            VIBE definitions: Summarize their professional energy (e.g. 'Founding Engineer Energy', 'Steady Corporate Stabilizer', 'High-Growth Scaling Expert').
+            THE ONE THING: The most critical insight about this candidate if everything else is forgotten.
+            PROBE: A specific, slightly uncomfortable question to test their biggest potential weakness or contradiction.
+            RED FLAGS: Any subtle inconsistencies, over-selling, or gaps.
             
             RETURN ONLY JSON. BE RIGID AND CONSISTENT.
             
@@ -102,10 +106,16 @@ export const aiService = {
                 culturalAlignment: 50,
                 creativity: 50,
                 confidence: 50,
-                notes: ["Automated scan yielded generic results."],
+                notes: ["Initial profile analysis completed. Behavioral and technical patterns pending deeper verification."],
                 interviewQuestions: [
                     { question: "Could you walk me through your most complex project?", idealAnswer: "The candidate should describe a technical challenge they solved end-to-end." }
-                ]
+                ],
+                hiddenBriefing: {
+                    vibe: "Awaiting deeper scan...",
+                    theOneThing: "Verify project scale.",
+                    probe: "How do you handle ambiguous requirements?",
+                    redFlags: []
+                }
             };
         }
     },
@@ -138,6 +148,7 @@ export const aiService = {
      * Detect potential bias in candidate profile or job description
      */
     async detectBias(text: string): Promise<any> {
+        console.log('[aiService] detectBias called. Text length:', text?.length);
         try {
             const prompt = `You are an expert in DEI (Diversity, Equity, and Inclusion). Analyze the provided text for potential hiring bias. 
             Return ONLY a JSON object with strictly:

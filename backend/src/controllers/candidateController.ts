@@ -189,17 +189,36 @@ export const resumeFetcher = async (req: Request, res: Response) => {
             const patterns = await aiService.fetchStudentPatterns(textToAnalyze);
 
             if (patterns) {
+                // Initialize patterns if they don't exist
+                if (!candidate.patterns) {
+                    candidate.patterns = {
+                        technicalAptitude: 0,
+                        leadershipPotential: 0,
+                        culturalAlignment: 0,
+                        creativity: 0,
+                        confidence: 0,
+                        notes: [],
+                        interviewScript: []
+                    };
+                }
+
+                // Merge: Update scores but preserve existing lists
+                // We keep the highest scores or average them? Let's take the latest for scores
+                // but strictly append/preserve notes.
                 candidate.patterns = {
-                    technicalAptitude: patterns.technicalAptitude,
-                    leadershipPotential: patterns.leadershipPotential,
-                    culturalAlignment: patterns.culturalAlignment,
-                    creativity: patterns.creativity,
-                    confidence: patterns.confidence,
-                    notes: patterns.notes,
-                    interviewScript: patterns.interviewQuestions?.map((qObj: any) => ({
-                        question: qObj.question,
-                        answer: qObj.idealAnswer || "Follow-up required during interview."
-                    }))
+                    technicalAptitude: patterns.technicalAptitude || candidate.patterns.technicalAptitude || 0,
+                    leadershipPotential: patterns.leadershipPotential || candidate.patterns.leadershipPotential || 0,
+                    culturalAlignment: patterns.culturalAlignment || candidate.patterns.culturalAlignment || 0,
+                    creativity: patterns.creativity || candidate.patterns.creativity || 0,
+                    confidence: patterns.confidence || candidate.patterns.confidence || 0,
+                    notes: Array.from(new Set([...(patterns.notes || []), ...(candidate.patterns.notes || [])])),
+                    interviewScript: (candidate.patterns.interviewScript && candidate.patterns.interviewScript.length > 0)
+                        ? (candidate.patterns.interviewScript as any)
+                        : patterns.interviewQuestions?.map((qObj: any) => ({
+                            question: qObj.question,
+                            answer: qObj.idealAnswer || "Follow-up required during interview."
+                        })),
+                    hiddenBriefing: patterns.hiddenBriefing || candidate.patterns.hiddenBriefing
                 };
                 await candidate.save();
                 updatedCandidates.push(candidate);

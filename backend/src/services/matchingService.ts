@@ -139,12 +139,18 @@ export const matchingService = {
             ? `${candidate.location.city}, ${candidate.location.country || ''}`
             : 'Not specified';
 
+        // Include any neural insights from interviews
+        const neuralNotes = Array.isArray(candidate.patterns?.notes) && candidate.patterns.notes.length > 0
+            ? candidate.patterns.notes[candidate.patterns.notes.length - 1]
+            : 'None available (No interview conducted)';
+
         const candidateProfile = `
 Candidate: ${candidate.firstName || ''} ${candidate.lastName || ''}
 Current Role: ${candidate.currentTitle || 'Unknown'} at ${candidate.currentCompany || 'Unknown'}
 Experience: ${expYears}
 Skills: ${skills}
 Location: ${location}
+Neural Summary (from AI Interview): ${neuralNotes}
 `.trim();
 
         const jobContext = `

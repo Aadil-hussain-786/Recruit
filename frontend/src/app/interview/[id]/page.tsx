@@ -398,6 +398,7 @@ export default function AIInterviewPage() {
             // Also send rawQA: the exact Q&A pairs captured live (no AI re-extraction needed)
             const res = await api.post('/chatbot/complete-interview', {
                 candidateId: candId,
+                applicationId,
                 transcript,
                 rawQA
             });

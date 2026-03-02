@@ -30,6 +30,7 @@ export default function SchedulePage() {
     const [step, setStep] = useState<'pick' | 'confirm' | 'success'>('pick');
     const [isConfirming, setIsConfirming] = useState(false);
     const [error, setError] = useState("");
+    const [candidateId, setCandidateId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchSlots = async () => {
@@ -62,6 +63,7 @@ export default function SchedulePage() {
             });
 
             if (res.data.success) {
+                setCandidateId(res.data.data.candidate);
                 setStep('success');
             }
         } catch (err: any) {
@@ -255,7 +257,7 @@ export default function SchedulePage() {
                                     Ready to fast-track? You can start your AI preliminary interview right now.
                                 </p>
                                 <div className="mt-6">
-                                    <Link href={`/interview/${params.id}?appId=${applicationId}`}>
+                                    <Link href={`/interview/${params.id}?appId=${applicationId}${candidateId ? `&candId=${candidateId}` : ''}`}>
                                         <Button className="w-full bg-black text-white rounded-xl py-6 font-bold tracking-widest uppercase text-xs">
                                             Start AI Interview Now
                                         </Button>

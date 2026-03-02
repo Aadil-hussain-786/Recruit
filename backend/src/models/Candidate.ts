@@ -37,6 +37,12 @@ export interface ICandidate extends Document {
             question: string;
             answer: string;
         }[];
+        hiddenBriefing?: {
+            vibe: string;
+            theOneThing: string;
+            probe: string;
+            redFlags: string[];
+        };
     };
     createdBy: mongoose.Types.ObjectId;
     organization: mongoose.Types.ObjectId;
@@ -87,7 +93,13 @@ const CandidateSchema: Schema = new Schema(
                     question: String,
                     answer: String
                 }
-            ]
+            ],
+            hiddenBriefing: {
+                vibe: String,
+                theOneThing: String,
+                probe: String,
+                redFlags: [String]
+            }
         },
         createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         organization: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },

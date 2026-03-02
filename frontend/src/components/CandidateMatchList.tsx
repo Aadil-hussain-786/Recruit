@@ -135,6 +135,25 @@ export default function CandidateMatchList({ candidates, biasAnalysis, onViewPro
                                 </div>
                             )}
 
+                            {/* Neural Summary (Latest Insight) */}
+                            {candidate.patterns?.notes && candidate.patterns.notes.length > 0 && (
+                                <div className="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 rounded-lg border-l-4 border-l-indigo-500">
+                                    <div className="flex items-start gap-2">
+                                        <Zap size={12} className="text-indigo-500 mt-0.5 shrink-0" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                                {candidate.patterns.notes[candidate.patterns.notes.length - 1]?.toLowerCase().includes('archetype')
+                                                    ? 'Neural Summary — Post Interview'
+                                                    : 'Neural Overview — Resume Scan'}
+                                            </p>
+                                            <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-300 italic font-medium">
+                                                "{candidate.patterns.notes[candidate.patterns.notes.length - 1]}"
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* AI reasoning */}
                             {candidate.reasoning && (
                                 <div className="mt-3 p-3 bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-lg">

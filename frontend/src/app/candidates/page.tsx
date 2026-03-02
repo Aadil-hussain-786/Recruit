@@ -18,7 +18,8 @@ import {
     Trash2,
     Sparkles,
     BarChart3,
-    Brain
+    Brain,
+    Fingerprint
 } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,8 @@ import { motion } from "framer-motion";
 import ResumeUpload from "@/components/ResumeUpload";
 import CandidateCommunication from "@/components/CandidateCommunication";
 import InterviewScheduler from "@/components/InterviewScheduler";
+import { IdentityCoreTree } from "@/components/IdentityCoreTree";
+import { NeuralPatternBox } from '@/components/NeuralPatternBox';
 
 export default function CandidatesPage() {
     const { user, loading: authLoading } = useAuth();
@@ -249,7 +252,8 @@ export default function CandidatesPage() {
                         <thead className="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400">
                             <tr>
                                 <th className="px-6 py-4 font-semibold">Candidate</th>
-                                <th className="px-6 py-4 font-semibold">Status</th>
+                                <th className="px-6 py-4 font-semibold text-center">Identity Architecture</th>
+                                <th className="px-6 py-4 font-semibold text-center">Status</th>
                                 <th className="px-6 py-4 font-semibold">AI Patterns</th>
                                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
                             </tr>
@@ -272,7 +276,13 @@ export default function CandidatesPage() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 min-w-[280px]">
+                                        <IdentityCoreTree
+                                            candidate={candidate}
+                                            className="p-0 bg-transparent backdrop-blur-none border-none shadow-none rounded-none"
+                                        />
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
                                         <span className={cn(
                                             "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
                                             candidate.status === "new" ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" :
@@ -387,33 +397,83 @@ export default function CandidatesPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-10">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-6">
-                                            {[
-                                                { label: 'Technical Aptitude', val: selectedCandidate.patterns.technicalAptitude, color: 'bg-blue-500' },
-                                                { label: 'Leadership Potential', val: selectedCandidate.patterns.leadershipPotential, color: 'bg-purple-500' },
-                                                { label: 'Cultural Alignment', val: selectedCandidate.patterns.culturalAlignment, color: 'bg-emerald-500' },
-                                                { label: 'Creativity', val: selectedCandidate.patterns.creativity, color: 'bg-amber-500' },
-                                                { label: 'Confidence', val: selectedCandidate.patterns.confidence, color: 'bg-rose-500' },
-                                            ].map((stat, i) => (
-                                                <div key={i} className="space-y-2">
-                                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                                        <span>{stat.label}</span>
-                                                        <span>{stat.val}%</span>
+                                    {/* PRE-INTERVIEW INTELLIGENCE (HIDDEN BRIEFING) */}
+                                    {selectedCandidate.patterns.hiddenBriefing && (
+                                        <div className="bg-zinc-950 text-white rounded-[2rem] p-8 border border-white/10 shadow-3xl overflow-hidden relative group">
+                                            <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity">
+                                                <Fingerprint size={48} className="text-indigo-500" />
+                                            </div>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center gap-2 mb-6">
+                                                    <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Pre-Interview Intelligence</h3>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">Candidate Vibe</p>
+                                                            <p className="text-2xl font-black italic uppercase tracking-tight">{selectedCandidate.patterns.hiddenBriefing.vibe}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">The "One Thing"</p>
+                                                            <p className="text-sm font-medium text-zinc-300 leading-relaxed italic border-l-2 border-indigo-500/30 pl-4">
+                                                                "{selectedCandidate.patterns.hiddenBriefing.theOneThing}"
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                                        <motion.div
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${stat.val}%` }}
-                                                            transition={{ duration: 1, delay: i * 0.1 }}
-                                                            className={cn("h-full", stat.color)}
-                                                        />
+
+                                                    <div className="space-y-4">
+                                                        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
+                                                            <p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-2">The Probe (Ask This)</p>
+                                                            <p className="text-xs font-bold text-zinc-100 leading-relaxed italic">
+                                                                {selectedCandidate.patterns.hiddenBriefing.probe}
+                                                            </p>
+                                                        </div>
+                                                        {selectedCandidate.patterns.hiddenBriefing.redFlags && selectedCandidate.patterns.hiddenBriefing.redFlags.length > 0 && (
+                                                            <div>
+                                                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Neural Red Flags</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {selectedCandidate.patterns.hiddenBriefing.redFlags.map((flag: string, i: number) => (
+                                                                        <span key={i} className="text-[9px] font-bold text-rose-500 bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20 uppercase">
+                                                                            {flag}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-6">
+                                            {/* AI patterns and skills are now highlighted here */}
+                                            <NeuralPatternBox patterns={selectedCandidate.patterns} />
+                                            <div className="p-6 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl">
+                                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-6 flex items-center gap-2">
+                                                    <Brain size={14} className="text-indigo-500" />
+                                                    Skill Archetype
+                                                </h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {selectedCandidate.skills && selectedCandidate.skills.length > 0 ? (
+                                                        selectedCandidate.skills.map((skill: string, i: number) => (
+                                                            <span key={i} className="px-3 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-medium">
+                                                                {skill}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 py-2 px-1">
+                                                            <p className="text-xs text-zinc-400 italic">No skills extracted from profile.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl p-6 border border-zinc-100 dark:border-zinc-800">
+                                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl p-6 border border-zinc-100 dark:border-zinc-800 h-fit">
                                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
                                                 <Sparkles size={14} className="text-indigo-500" />
                                                 Behavioral Verdict
@@ -564,6 +624,6 @@ export default function CandidatesPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

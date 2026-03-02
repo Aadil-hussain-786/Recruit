@@ -340,33 +340,79 @@ export default function ResumeFetcherPage() {
                                                 exit={{ height: 0, opacity: 0 }}
                                                 className="border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 overflow-hidden"
                                             >
-                                                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
-                                                    <div className="space-y-6">
-                                                        <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Behavioral Audit</h5>
-                                                        <div className="space-y-4">
-                                                            {candidate.patterns.notes?.map((note: string, i: number) => (
-                                                                <div key={i} className="flex gap-4">
-                                                                    <div className="h-1.5 w-1.5 rounded-full bg-zinc-900 dark:bg-white mt-1.5 flex-shrink-0" />
-                                                                    <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed italic">"{note}"</p>
+                                                <div className="p-8 space-y-12">
+                                                    {candidate.patterns.hiddenBriefing && (
+                                                        <div className="bg-zinc-900 text-white rounded-[2.5rem] p-8 border border-white/10 shadow-3xl overflow-hidden relative group">
+                                                            <div className="relative z-10">
+                                                                <div className="flex items-center gap-2 mb-8">
+                                                                    <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                                                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Neural Intelligence Briefing</h3>
                                                                 </div>
-                                                            ))}
+
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                                                                    <div className="space-y-6">
+                                                                        <div>
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2">Energy & Vibe</p>
+                                                                            <p className="text-3xl font-black italic uppercase tracking-tighter leading-none">{candidate.patterns.hiddenBriefing.vibe}</p>
+                                                                        </div>
+                                                                        {candidate.patterns.hiddenBriefing.redFlags && candidate.patterns.hiddenBriefing.redFlags.length > 0 && (
+                                                                            <div className="flex flex-wrap gap-2 pt-2">
+                                                                                {candidate.patterns.hiddenBriefing.redFlags.map((flag: string, i: number) => (
+                                                                                    <span key={i} className="text-[8px] font-black italic text-rose-500 bg-rose-500/10 px-2 py-1 rounded-sm border border-rose-500/20 uppercase">
+                                                                                        {flag}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                                        <div className="p-6 bg-white/5 border border-white/10 rounded-3xl">
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-3">Core Insight</p>
+                                                                            <p className="text-xs font-medium text-zinc-300 leading-relaxed italic border-l-2 border-indigo-500/30 pl-4">
+                                                                                "{candidate.patterns.hiddenBriefing.theOneThing}"
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="p-6 bg-white/5 border border-white/10 rounded-3xl">
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-3">The Critical Probe</p>
+                                                                            <p className="text-xs font-bold text-zinc-100 leading-relaxed italic">
+                                                                                {candidate.patterns.hiddenBriefing.probe}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="space-y-6">
-                                                        <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Interview Guide</h5>
-                                                        <div className="space-y-4">
-                                                            {candidate.patterns.interviewScript?.map((item: any, i: number) => (
-                                                                <div key={i} className="p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3 shadow-sm">
-                                                                    <div className="flex gap-2">
-                                                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter mt-0.5">Q:</span>
-                                                                        <p className="text-[11px] font-bold text-zinc-900 dark:text-zinc-50 leading-tight">{item.question}</p>
+                                                    )}
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                                        <div className="space-y-6">
+                                                            <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Behavioral Audit</h5>
+                                                            <div className="space-y-4">
+                                                                {candidate.patterns.notes?.map((note: string, i: number) => (
+                                                                    <div key={i} className="flex gap-4">
+                                                                        <div className="h-1.5 w-1.5 rounded-full bg-zinc-900 dark:bg-white mt-1.5 flex-shrink-0" />
+                                                                        <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed italic">"{note}"</p>
                                                                     </div>
-                                                                    <div className="flex gap-2 pl-4 border-l-2 border-indigo-100 dark:border-indigo-900/50">
-                                                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter mt-0.5">A:</span>
-                                                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed italic">{item.answer}</p>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-6">
+                                                            <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Interview Guide</h5>
+                                                            <div className="space-y-4">
+                                                                {candidate.patterns.interviewScript?.map((item: any, i: number) => (
+                                                                    <div key={i} className="p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3 shadow-sm">
+                                                                        <div className="flex gap-2">
+                                                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter mt-0.5">Q:</span>
+                                                                            <p className="text-[11px] font-bold text-zinc-900 dark:text-zinc-50 leading-tight">{item.question}</p>
+                                                                        </div>
+                                                                        <div className="flex gap-2 pl-4 border-l-2 border-indigo-100 dark:border-indigo-900/50">
+                                                                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter mt-0.5">A:</span>
+                                                                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed italic">{item.answer}</p>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            ))}
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

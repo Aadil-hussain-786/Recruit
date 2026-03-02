@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { chatbotService } from '../services/chatbotService';
 import Candidate from '../models/Candidate';
+import Application from '../models/Application';
 
 // @desc    Get chatbot response
 // @route   POST /api/chatbot/message
@@ -126,12 +127,29 @@ export const completeInterview = async (req: Request, res: Response) => {
             : (analysis.interviewScript || []);
 
         if (analysis) {
-            // Validate candidateId format before query to prevent CastError 500
-            const isValidId = /^[0-9a-fA-F]{24}$/.test(candidateId);
+            // Validate candidateId format or use applicationId to find candidate
+            let targetCandidateId = candidateId;
+            const isValidId = /^[0-9a-fA-F]{24}$/.test(candidateId || '');
 
-            if (isValidId) {
+            if (!isValidId && req.body.applicationId) {
+                const isValidAppId = /^[0-9a-fA-F]{24}$/.test(req.body.applicationId);
+                if (isValidAppId) {
+                    try {
+                        const application = await Application.findById(req.body.applicationId);
+                        if (application && application.candidate) {
+                            targetCandidateId = application.candidate.toString();
+                        }
+                    } catch (e) {
+                        console.error('[DB Update] Failed to derive candidate from application:', e);
+                    }
+                }
+            }
+
+            const finalValidId = /^[0-9a-fA-F]{24}$/.test(targetCandidateId || '');
+
+            if (finalValidId) {
                 try {
-                    const candidate = await Candidate.findById(candidateId);
+                    const candidate = await Candidate.findById(targetCandidateId);
                     if (candidate) {
                         // Ensure patterns object exists
                         if (!candidate.patterns) {
