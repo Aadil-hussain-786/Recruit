@@ -21,26 +21,57 @@ export const aiService = {
     },
 
     /**
-     * Parse resume text into structured data using OpenRouter
+     * Parse resume text into structured data with extended fields
      */
     async parseResume(text: string): Promise<any> {
         try {
             const prompt = `You are a professional HR data parser. Convert the resume text into a CLEAN JSON object.
-            Fields: firstName, lastName, email, phone, currentCompany, currentTitle, totalExperience (months), skills (array), expectedSalary, noticePeriod, location {city, country}.
-            Also evaluate: technicalAptitude, leadershipPotential, culturalAlignment, creativity, confidence (all 0-100).
-            Include 3 behavioral notes in 'patternNotes' array.
 
-            RETURN ONLY JSON. DO NOT EXPLAIN.
-            
-            Text:
-            ${text}`;
+REQUIRED FIELDS:
+- firstName (string)
+- lastName (string)
+- email (string)
+- phone (string)
+- currentCompany (string)
+- currentTitle (string)
+- totalExperience (number — in months)
+- skills (array of strings — extract ALL technical and soft skills)
+- expectedSalary (number or null)
+- noticePeriod (string or null)
+- location: { city, country }
+- linkedInUrl (string or null — extract if present)
+- education: array of { degree, institution, year, field }
+- certifications: array of strings
+- languages: array of strings (spoken/written languages)
+- workPreference: "remote" | "hybrid" | "onsite" | "flexible" (infer from context)
+
+AI EVALUATION SCORES (0-100, based on evidence in resume):
+- technicalAptitude: depth and breadth of technical skills
+- leadershipPotential: management experience, team lead roles, mentoring
+- culturalAlignment: teamwork signals, open-source contributions, community involvement
+- creativity: side projects, hackathons, patents, novel approaches mentioned
+- confidence: strength of self-description, quantified achievements
+- communicationSkill: writing quality, presentation experience, publications
+- problemSolvingAbility: complex projects handled, debugging stories, system design
+- adaptability: role changes, technology migrations, cross-functional work
+- domainExpertise: years in specific domain, depth of specialization
+- teamworkOrientation: collaborative projects, "we" language, cross-team work
+- growthMindset: learning mentions, new tech adoption, career progression
+
+Include 3 behavioral observations in 'patternNotes' array.
+
+RETURN ONLY JSON. No explanation. No markdown fences.
+
+Resume Text:
+${text}`;
 
             const responseText = await callOpenRouter([
-                { role: 'system', content: 'You are a JSON extractor.' },
+                { role: 'system', content: 'You are a JSON extractor. Return ONLY valid JSON.' },
                 { role: 'user', content: prompt }
             ], 'meta-llama/llama-3.3-70b-instruct:free', { temperature: 0.1, seed: 42 });
 
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            const cleaned = responseText.replace(/```json\n?|\n?```/gi, '').trim();
+            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
             const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}');
 
             return {
@@ -51,6 +82,12 @@ export const aiService = {
                     culturalAlignment: parsed.culturalAlignment || 0,
                     creativity: parsed.creativity || 0,
                     confidence: parsed.confidence || 0,
+                    communicationSkill: parsed.communicationSkill || 0,
+                    problemSolvingAbility: parsed.problemSolvingAbility || 0,
+                    adaptability: parsed.adaptability || 0,
+                    domainExpertise: parsed.domainExpertise || 0,
+                    teamworkOrientation: parsed.teamworkOrientation || 0,
+                    growthMindset: parsed.growthMindset || 0,
                     notes: parsed.patternNotes || []
                 }
             };
@@ -61,27 +98,45 @@ export const aiService = {
     },
 
     /**
-     * Specially analyze student resumes for excellence patterns
+     * Deep analysis patterns for candidates
      */
     async fetchStudentPatterns(text: string): Promise<any> {
         try {
-            const prompt = `Perform a high-precision excellence audit on this candidate. 
+            const prompt = `Perform a comprehensive excellence audit on this candidate.
             Assign scores (0-100) based on specific evidence in the text.
             
             REQUIRED FIELDS IN JSON:
+            PRIMARY METRICS:
             - technicalAptitude (0-100)
             - leadershipPotential (0-100)
             - culturalAlignment (0-100)
             - creativity (0-100)
             - confidence (0-100)
-            - notes (array of 3 specific technical/behavioral observations)
-            - interviewQuestions (array of 3 objects with 'question' and 'idealAnswer')
-            - hiddenBriefing (OBJECT with: 'vibe', 'theOneThing', 'probe', 'redFlags' (array))
             
-            VIBE definitions: Summarize their professional energy (e.g. 'Founding Engineer Energy', 'Steady Corporate Stabilizer', 'High-Growth Scaling Expert').
-            THE ONE THING: The most critical insight about this candidate if everything else is forgotten.
-            PROBE: A specific, slightly uncomfortable question to test their biggest potential weakness or contradiction.
-            RED FLAGS: Any subtle inconsistencies, over-selling, or gaps.
+            EXTENDED METRICS:
+            - communicationSkill (0-100)
+            - problemSolvingAbility (0-100)
+            - adaptability (0-100)
+            - domainExpertise (0-100)
+            - teamworkOrientation (0-100)
+            - selfAwareness (0-100)
+            - growthMindset (0-100)
+            
+            QUALITATIVE:
+            - notes (array of 3 specific observations with evidence)
+            - interviewQuestions (array of 3 objects with 'question' and 'idealAnswer')
+            - hiddenBriefing (OBJECT with: 'vibe', 'theOneThing', 'probe', 'redFlags' array)
+            - strengthsAndWeaknesses: { strengths: [...], weaknesses: [...], blindSpots: [...] }
+            
+            VIBE: Summarize their professional energy (e.g. 'Founding Engineer Energy', 'Steady Corporate Stabilizer').
+            THE ONE THING: Most critical insight about this candidate.
+            PROBE: A specific question to test their biggest weakness.
+            RED FLAGS: Subtle inconsistencies or gaps.
+            
+            SCORING RULES:
+            - DO NOT default everything to 50. Use the full 0-100 range.
+            - Score below 30 if there's no evidence.
+            - Score above 80 only with strong evidence.
             
             RETURN ONLY JSON. BE RIGID AND CONSISTENT.
             
@@ -93,26 +148,33 @@ export const aiService = {
                 { role: 'user', content: prompt }
             ], 'meta-llama/llama-3.3-70b-instruct:free', { temperature: 0.1, seed: 12345 });
 
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            const cleaned = responseText.replace(/```json\n?|\n?```/gi, '').trim();
+            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
             if (!jsonMatch) throw new Error("No JSON found in response");
 
             return JSON.parse(jsonMatch[0]);
         } catch (error: any) {
             console.error('Error fetching student patterns:', error);
-            // Fallback object to prevent crashes
             return {
-                technicalAptitude: 50,
-                leadershipPotential: 50,
-                culturalAlignment: 50,
-                creativity: 50,
-                confidence: 50,
-                notes: ["Initial profile analysis completed. Behavioral and technical patterns pending deeper verification."],
+                technicalAptitude: 0,
+                leadershipPotential: 0,
+                culturalAlignment: 0,
+                creativity: 0,
+                confidence: 0,
+                communicationSkill: 0,
+                problemSolvingAbility: 0,
+                adaptability: 0,
+                domainExpertise: 0,
+                teamworkOrientation: 0,
+                selfAwareness: 0,
+                growthMindset: 0,
+                notes: ["Analysis could not be completed. Manual review required."],
                 interviewQuestions: [
-                    { question: "Could you walk me through your most complex project?", idealAnswer: "The candidate should describe a technical challenge they solved end-to-end." }
+                    { question: "Walk me through your most complex project.", idealAnswer: "Should describe a technical challenge solved end-to-end." }
                 ],
                 hiddenBriefing: {
-                    vibe: "Awaiting deeper scan...",
-                    theOneThing: "Verify project scale.",
+                    vibe: "Pending analysis...",
+                    theOneThing: "Verify project claims.",
                     probe: "How do you handle ambiguous requirements?",
                     redFlags: []
                 }
@@ -125,33 +187,33 @@ export const aiService = {
      */
     async generateJD(role: string, seniority: string, keySkills: string[], tone: string = 'formal'): Promise<string> {
         try {
-            const prompt = `You are an expert HR copywriter. Write a compelling, enterprise-grade Job Description for the following role:
+            const prompt = `You are an expert HR copywriter. Write a compelling, enterprise-grade Job Description for:
             Role: ${role}
             Seniority: ${seniority}
             Key Skills: ${keySkills.join(', ')}
             Tone: ${tone}
             
-            Include sections: About the Role, Responsibilities, Requirements, and Why Join Us.
-            The JD should be professional and SEO-optimized.`;
+            Include: About the Role, Responsibilities, Requirements, and Why Join Us.
+            Make it professional and SEO-optimized.`;
 
             return await callOpenRouter([
                 { role: 'system', content: 'You are an expert HR copywriter.' },
                 { role: 'user', content: prompt }
             ]);
         } catch (error: any) {
-            console.error('Detailed Error generating JD:', error);
+            console.error('Error generating JD:', error);
             return `Fallback JD for ${role}...`;
         }
     },
 
     /**
-     * Detect potential bias in candidate profile or job description
+     * Detect potential bias in text
      */
     async detectBias(text: string): Promise<any> {
         console.log('[aiService] detectBias called. Text length:', text?.length);
         try {
-            const prompt = `You are an expert in DEI (Diversity, Equity, and Inclusion). Analyze the provided text for potential hiring bias. 
-            Return ONLY a JSON object with strictly:
+            const prompt = `Analyze the provided text for potential hiring bias.
+            Return ONLY a JSON object with:
             - score (number 0-100)
             - findings (array of strings)
             - suggestions (array of strings)
@@ -162,7 +224,8 @@ export const aiService = {
                 { role: 'user', content: prompt }
             ]);
 
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            const cleaned = responseText.replace(/```json\n?|\n?```/gi, '').trim();
+            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
             const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}');
 
             return {
@@ -178,16 +241,14 @@ export const aiService = {
 
     /**
      * Generate Vector Embeddings.
-     * Returns an EMPTY ARRAY on failure — never a random vector.
-     * The matchingService detects empty/zero embeddings and uses keyword scoring instead,
-     * which is always more accurate than comparing two random number arrays.
+     * Returns EMPTY ARRAY on failure; matchingService uses keyword scoring instead.
      */
     async generateEmbeddings(text: string): Promise<number[]> {
         try {
             return await getEmbeddings(text);
         } catch (error) {
-            console.warn('[aiService] Embeddings failed — keyword scoring will be used instead:', error);
-            return []; // Empty = invalid, matchingService will use keyword fallback
+            console.warn('[aiService] Embeddings failed — keyword scoring will be used:', error);
+            return [];
         }
     }
 };

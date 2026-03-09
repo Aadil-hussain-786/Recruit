@@ -52,8 +52,18 @@ export default function CandidatesPage() {
         phone: "",
         currentCompany: "",
         currentTitle: "",
+        totalExperience: "",
         skills: [],
-        status: "new"
+        status: "new",
+        location: { city: "", country: "" },
+        expectedSalary: "",
+        salaryCurrency: "USD",
+        noticePeriod: "",
+        linkedInUrl: "",
+        workPreference: "flexible",
+        education: [],
+        certifications: [],
+        languages: []
     });
 
     useEffect(() => {
@@ -166,51 +176,60 @@ export default function CandidatesPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5 text-left">
                                             <label className="text-[10px] font-bold text-zinc-500 uppercase">First Name</label>
-                                            <input
-                                                required
-                                                type="text"
-                                                value={newCandidate.firstName}
-                                                onChange={(e) => setNewCandidate({ ...newCandidate, firstName: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm"
-                                            />
+                                            <input required type="text" value={newCandidate.firstName} onChange={(e) => setNewCandidate({ ...newCandidate, firstName: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
                                         </div>
                                         <div className="space-y-1.5 text-left">
                                             <label className="text-[10px] font-bold text-zinc-500 uppercase">Last Name</label>
-                                            <input
-                                                required
-                                                type="text"
-                                                value={newCandidate.lastName}
-                                                onChange={(e) => setNewCandidate({ ...newCandidate, lastName: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm"
-                                            />
+                                            <input required type="text" value={newCandidate.lastName} onChange={(e) => setNewCandidate({ ...newCandidate, lastName: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
                                         </div>
-                                        <div className="col-span-2 space-y-1.5 text-left">
+                                        <div className="space-y-1.5 text-left">
                                             <label className="text-[10px] font-bold text-zinc-500 uppercase">Email Address</label>
-                                            <input
-                                                required
-                                                type="email"
-                                                value={newCandidate.email}
-                                                onChange={(e) => setNewCandidate({ ...newCandidate, email: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm"
-                                            />
+                                            <input required type="email" value={newCandidate.email} onChange={(e) => setNewCandidate({ ...newCandidate, email: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Phone</label>
+                                            <input type="text" value={newCandidate.phone} onChange={(e) => setNewCandidate({ ...newCandidate, phone: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
                                         </div>
                                         <div className="space-y-1.5 text-left">
                                             <label className="text-[10px] font-bold text-zinc-500 uppercase">Current Title</label>
-                                            <input
-                                                type="text"
-                                                value={newCandidate.currentTitle}
-                                                onChange={(e) => setNewCandidate({ ...newCandidate, currentTitle: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm"
-                                            />
+                                            <input type="text" value={newCandidate.currentTitle} onChange={(e) => setNewCandidate({ ...newCandidate, currentTitle: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
                                         </div>
                                         <div className="space-y-1.5 text-left">
                                             <label className="text-[10px] font-bold text-zinc-500 uppercase">Current Company</label>
-                                            <input
-                                                type="text"
-                                                value={newCandidate.currentCompany}
-                                                onChange={(e) => setNewCandidate({ ...newCandidate, currentCompany: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm"
-                                            />
+                                            <input type="text" value={newCandidate.currentCompany} onChange={(e) => setNewCandidate({ ...newCandidate, currentCompany: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Experience (months)</label>
+                                            <input type="number" value={newCandidate.totalExperience} onChange={(e) => setNewCandidate({ ...newCandidate, totalExperience: Number(e.target.value) })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" placeholder="e.g. 36" />
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Notice Period</label>
+                                            <input type="text" value={newCandidate.noticePeriod} onChange={(e) => setNewCandidate({ ...newCandidate, noticePeriod: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" placeholder="e.g. 30 days" />
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">City</label>
+                                            <input type="text" value={newCandidate.location?.city || ''} onChange={(e) => setNewCandidate({ ...newCandidate, location: { ...newCandidate.location, city: e.target.value } })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Country</label>
+                                            <input type="text" value={newCandidate.location?.country || ''} onChange={(e) => setNewCandidate({ ...newCandidate, location: { ...newCandidate.location, country: e.target.value } })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Expected Salary</label>
+                                            <input type="number" value={newCandidate.expectedSalary} onChange={(e) => setNewCandidate({ ...newCandidate, expectedSalary: Number(e.target.value) })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" />
+                                        </div>
+                                        <div className="space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Work Preference</label>
+                                            <select value={newCandidate.workPreference} onChange={(e) => setNewCandidate({ ...newCandidate, workPreference: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm">
+                                                <option value="flexible">Flexible</option>
+                                                <option value="remote">Remote</option>
+                                                <option value="hybrid">Hybrid</option>
+                                                <option value="onsite">Onsite</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-span-2 space-y-1.5 text-left">
+                                            <label className="text-[10px] font-bold text-zinc-500 uppercase">LinkedIn URL</label>
+                                            <input type="url" value={newCandidate.linkedInUrl} onChange={(e) => setNewCandidate({ ...newCandidate, linkedInUrl: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm" placeholder="https://linkedin.com/in/..." />
                                         </div>
                                     </div>
 
@@ -397,50 +416,40 @@ export default function CandidatesPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-10">
+                                    {/* CANDIDATE PROFILE DATA */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {[
+                                            { label: 'Experience', value: selectedCandidate.totalExperience ? `${Math.round(selectedCandidate.totalExperience / 12)}y ${selectedCandidate.totalExperience % 12}m` : '—' },
+                                            { label: 'Location', value: selectedCandidate.location?.city ? `${selectedCandidate.location.city}, ${selectedCandidate.location.country || ''}` : '—' },
+                                            { label: 'Salary', value: selectedCandidate.expectedSalary ? `${selectedCandidate.salaryCurrency || 'USD'} ${selectedCandidate.expectedSalary.toLocaleString()}` : '—' },
+                                            { label: 'Notice', value: selectedCandidate.noticePeriod || '—' },
+                                            { label: 'Work Pref', value: selectedCandidate.workPreference || '—' },
+                                            { label: 'LinkedIn', value: selectedCandidate.linkedInUrl ? 'Connected' : '—' },
+                                            { label: 'Languages', value: selectedCandidate.languages?.length ? selectedCandidate.languages.join(', ') : '—' },
+                                            { label: 'Certifications', value: selectedCandidate.certifications?.length || 0 },
+                                        ].map((item, i) => (
+                                            <div key={i} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-1">{item.label}</p>
+                                                <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{item.value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
                                     {/* PRE-INTERVIEW INTELLIGENCE (HIDDEN BRIEFING) */}
                                     {selectedCandidate.patterns.hiddenBriefing && (
                                         <div className="bg-zinc-950 text-white rounded-[2rem] p-8 border border-white/10 shadow-3xl overflow-hidden relative group">
-                                            <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity">
-                                                <Fingerprint size={48} className="text-indigo-500" />
-                                            </div>
+                                            <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-100 transition-opacity"><Fingerprint size={48} className="text-indigo-500" /></div>
                                             <div className="relative z-10">
-                                                <div className="flex items-center gap-2 mb-6">
-                                                    <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
-                                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Pre-Interview Intelligence</h3>
-                                                </div>
-
+                                                <div className="flex items-center gap-2 mb-6"><div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" /><h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Pre-Interview Intelligence</h3></div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                     <div className="space-y-4">
-                                                        <div>
-                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">Candidate Vibe</p>
-                                                            <p className="text-2xl font-black italic uppercase tracking-tight">{selectedCandidate.patterns.hiddenBriefing.vibe}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">The "One Thing"</p>
-                                                            <p className="text-sm font-medium text-zinc-300 leading-relaxed italic border-l-2 border-indigo-500/30 pl-4">
-                                                                "{selectedCandidate.patterns.hiddenBriefing.theOneThing}"
-                                                            </p>
-                                                        </div>
+                                                        <div><p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">Candidate Vibe</p><p className="text-2xl font-black italic uppercase tracking-tight">{selectedCandidate.patterns.hiddenBriefing.vibe}</p></div>
+                                                        <div><p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">The "One Thing"</p><p className="text-sm font-medium text-zinc-300 leading-relaxed italic border-l-2 border-indigo-500/30 pl-4">"{selectedCandidate.patterns.hiddenBriefing.theOneThing}"</p></div>
                                                     </div>
-
                                                     <div className="space-y-4">
-                                                        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
-                                                            <p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-2">The Probe (Ask This)</p>
-                                                            <p className="text-xs font-bold text-zinc-100 leading-relaxed italic">
-                                                                {selectedCandidate.patterns.hiddenBriefing.probe}
-                                                            </p>
-                                                        </div>
-                                                        {selectedCandidate.patterns.hiddenBriefing.redFlags && selectedCandidate.patterns.hiddenBriefing.redFlags.length > 0 && (
-                                                            <div>
-                                                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Neural Red Flags</p>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {selectedCandidate.patterns.hiddenBriefing.redFlags.map((flag: string, i: number) => (
-                                                                        <span key={i} className="text-[9px] font-bold text-rose-500 bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20 uppercase">
-                                                                            {flag}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
+                                                        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl"><p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-2">The Probe (Ask This)</p><p className="text-xs font-bold text-zinc-100 leading-relaxed italic">{selectedCandidate.patterns.hiddenBriefing.probe}</p></div>
+                                                        {selectedCandidate.patterns.hiddenBriefing.redFlags?.length > 0 && (
+                                                            <div><p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Neural Red Flags</p><div className="flex flex-wrap gap-2">{selectedCandidate.patterns.hiddenBriefing.redFlags.map((flag: string, i: number) => (<span key={i} className="text-[9px] font-bold text-rose-500 bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20 uppercase">{flag}</span>))}</div></div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -448,82 +457,88 @@ export default function CandidatesPage() {
                                         </div>
                                     )}
 
+                                    {/* ALL 12 INTELLIGENCE METRICS */}
+                                    <div>
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2"><Brain size={14} className="text-indigo-500" />Intelligence Matrix — 12 Dimensions</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                            {[
+                                                { label: 'Technical', key: 'technicalAptitude', color: 'bg-blue-500' },
+                                                { label: 'Leadership', key: 'leadershipPotential', color: 'bg-purple-500' },
+                                                { label: 'Culture Fit', key: 'culturalAlignment', color: 'bg-emerald-500' },
+                                                { label: 'Creativity', key: 'creativity', color: 'bg-amber-500' },
+                                                { label: 'Confidence', key: 'confidence', color: 'bg-rose-500' },
+                                                { label: 'Communication', key: 'communicationSkill', color: 'bg-cyan-500' },
+                                                { label: 'Problem Solving', key: 'problemSolvingAbility', color: 'bg-indigo-500' },
+                                                { label: 'Adaptability', key: 'adaptability', color: 'bg-teal-500' },
+                                                { label: 'Domain Depth', key: 'domainExpertise', color: 'bg-orange-500' },
+                                                { label: 'Teamwork', key: 'teamworkOrientation', color: 'bg-pink-500' },
+                                                { label: 'Self-Awareness', key: 'selfAwareness', color: 'bg-violet-500' },
+                                                { label: 'Growth Mindset', key: 'growthMindset', color: 'bg-lime-500' },
+                                            ].map((metric) => {
+                                                const val = (selectedCandidate.patterns as any)[metric.key] || 0;
+                                                return (
+                                                    <div key={metric.key} className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{metric.label}</span>
+                                                            <span className={cn("text-sm font-black", val >= 70 ? 'text-emerald-600' : val >= 40 ? 'text-amber-500' : 'text-zinc-400')}>{val}%</span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                                            <div className={cn('h-full rounded-full transition-all duration-700', metric.color)} style={{ width: `${val}%` }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* HIRE RECOMMENDATION */}
+                                    {selectedCandidate.patterns.hireRecommendation?.decision && (
+                                        <div className={cn('p-6 rounded-2xl border', selectedCandidate.patterns.hireRecommendation.decision.includes('yes') ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900' : selectedCandidate.patterns.hireRecommendation.decision === 'maybe' ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900')}>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">AI Hire Recommendation</p>
+                                            <p className="text-xl font-black uppercase tracking-tight text-zinc-900 dark:text-zinc-100">{selectedCandidate.patterns.hireRecommendation.decision.replace(/_/g, ' ')}</p>
+                                            <p className="text-xs text-zinc-500 mt-1">Confidence: {selectedCandidate.patterns.hireRecommendation.confidence}%</p>
+                                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">{selectedCandidate.patterns.hireRecommendation.reasoning}</p>
+                                            {selectedCandidate.patterns.hireRecommendation.idealRole && <p className="text-xs text-indigo-500 mt-2 font-bold">Ideal Role: {selectedCandidate.patterns.hireRecommendation.idealRole}</p>}
+                                        </div>
+                                    )}
+
+                                    {/* STRENGTHS / WEAKNESSES / BLIND SPOTS */}
+                                    {selectedCandidate.patterns.strengthsAndWeaknesses && (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {[{ label: 'Strengths', data: selectedCandidate.patterns.strengthsAndWeaknesses.strengths, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/20' }, { label: 'Weaknesses', data: selectedCandidate.patterns.strengthsAndWeaknesses.weaknesses, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/20' }, { label: 'Blind Spots', data: selectedCandidate.patterns.strengthsAndWeaknesses.blindSpots, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/20' }].map((section) => (
+                                                <div key={section.label} className={cn('p-4 rounded-2xl border border-zinc-100 dark:border-zinc-800', section.bg)}>
+                                                    <p className={cn('text-[10px] font-black uppercase tracking-widest mb-3', section.color)}>{section.label}</p>
+                                                    <ul className="space-y-2">{(section.data || []).map((item: string, i: number) => (<li key={i} className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed flex gap-2"><span className={section.color}>•</span>{item}</li>))}</ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-6">
-                                            {/* AI patterns and skills are now highlighted here */}
                                             <NeuralPatternBox patterns={selectedCandidate.patterns} />
                                             <div className="p-6 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl">
-                                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-6 flex items-center gap-2">
-                                                    <Brain size={14} className="text-indigo-500" />
-                                                    Skill Archetype
-                                                </h3>
+                                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-6 flex items-center gap-2"><Brain size={14} className="text-indigo-500" />Skill Archetype</h3>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {selectedCandidate.skills && selectedCandidate.skills.length > 0 ? (
-                                                        selectedCandidate.skills.map((skill: string, i: number) => (
-                                                            <span key={i} className="px-3 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-medium">
-                                                                {skill}
-                                                            </span>
-                                                        ))
-                                                    ) : (
-                                                        <div className="flex items-center gap-2 py-2 px-1">
-                                                            <p className="text-xs text-zinc-400 italic">No skills extracted from profile.</p>
-                                                        </div>
-                                                    )}
+                                                    {selectedCandidate.skills?.length > 0 ? selectedCandidate.skills.map((skill: string, i: number) => (<span key={i} className="px-3 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs font-medium">{skill}</span>)) : (<p className="text-xs text-zinc-400 italic">No skills extracted.</p>)}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-3xl p-6 border border-zinc-100 dark:border-zinc-800 h-fit">
-                                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
-                                                <Sparkles size={14} className="text-indigo-500" />
-                                                Behavioral Verdict
-                                            </h3>
-
-                                            {/* Overall verdict badge based on average pattern score */}
+                                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2"><Sparkles size={14} className="text-indigo-500" />Behavioral Verdict</h3>
                                             {(() => {
                                                 const p = selectedCandidate.patterns;
-                                                const avg = Math.round((
-                                                    (p.technicalAptitude || 0) +
-                                                    (p.leadershipPotential || 0) +
-                                                    (p.culturalAlignment || 0) +
-                                                    (p.creativity || 0) +
-                                                    (p.confidence || 0)
-                                                ) / 5);
-                                                const verdict = avg >= 70 ? { label: 'Strong Candidate', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }
-                                                    : avg >= 45 ? { label: 'Moderate Fit', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' }
-                                                        : { label: 'Needs Development', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' };
-                                                return (
-                                                    <div className="flex items-center gap-2 mb-4">
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${verdict.color}`}>
-                                                            {verdict.label}
-                                                        </span>
-                                                        <span className="text-[10px] text-zinc-400 font-medium">
-                                                            Avg score: {avg}%
-                                                        </span>
-                                                    </div>
-                                                );
+                                                const allScores = [p.technicalAptitude, p.leadershipPotential, p.culturalAlignment, p.creativity, p.confidence, p.communicationSkill, p.problemSolvingAbility, p.adaptability, p.domainExpertise, p.teamworkOrientation, p.selfAwareness, p.growthMindset].map(v => v || 0);
+                                                const validScores = allScores.filter(v => v > 0);
+                                                const avg = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
+                                                const verdict = avg >= 70 ? { label: 'Strong Candidate', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' } : avg >= 45 ? { label: 'Moderate Fit', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' } : { label: 'Needs Development', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' };
+                                                return (<div className="flex items-center gap-2 mb-4"><span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${verdict.color}`}>{verdict.label}</span><span className="text-[10px] text-zinc-400 font-medium">Avg: {avg}% ({validScores.length} metrics)</span></div>);
                                             })()}
-
                                             <div className="space-y-3">
-                                                {selectedCandidate.patterns.notes && selectedCandidate.patterns.notes.length > 0
-                                                    ? selectedCandidate.patterns.notes.map((note: string, i: number) => (
-                                                        <div key={i} className="flex items-start gap-2.5">
-                                                            <span className="shrink-0 mt-1 h-4 w-4 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-[8px] font-black text-indigo-600 dark:text-indigo-400">
-                                                                {i + 1}
-                                                            </span>
-                                                            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                                                {note}
-                                                            </p>
-                                                        </div>
-                                                    ))
-                                                    : (
-                                                        <div className="space-y-2">
-                                                            <p className="text-sm text-zinc-500 italic">No behavioral notes yet.</p>
-                                                            <p className="text-[11px] text-zinc-400">
-                                                                Complete an AI interview to generate detailed behavioral predictions for this candidate.
-                                                            </p>
-                                                        </div>
-                                                    )
+                                                {selectedCandidate.patterns.notes?.length > 0
+                                                    ? selectedCandidate.patterns.notes.map((note: string, i: number) => (<div key={i} className="flex items-start gap-2.5"><span className="shrink-0 mt-1 h-4 w-4 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-[8px] font-black text-indigo-600 dark:text-indigo-400">{i + 1}</span><p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">{note}</p></div>))
+                                                    : (<p className="text-sm text-zinc-500 italic">No behavioral notes yet. Complete an AI interview to generate insights.</p>)
                                                 }
                                             </div>
                                         </div>

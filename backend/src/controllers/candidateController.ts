@@ -160,6 +160,17 @@ export const deleteCandidate = async (req: Request, res: Response) => {
     }
 };
 
+/**
+ * Smart merge: takes higher score when one side is 0, weighted average when both have data
+ */
+function smartMergeScore(existing: number | undefined, incoming: number | undefined): number {
+    const a = existing || 0;
+    const b = incoming || 0;
+    if (a === 0) return b;
+    if (b === 0) return a;
+    return Math.round(a * 0.3 + b * 0.7);
+}
+
 // @desc    Bulk fetch patterns for candidates (Resume Fetcher)
 // @route   POST /api/candidates/fetcher
 // @access  Private
@@ -180,8 +191,6 @@ export const resumeFetcher = async (req: Request, res: Response) => {
         const updatedCandidates = [];
 
         for (const candidate of candidates) {
-            // If patterns already exist and not forced, we could skip, but let's assume forced for this feature
-            // We need some text to analyze. If we have parsedData, use that, otherwise use profile text.
             const textToAnalyze = candidate.parsedData
                 ? JSON.stringify(candidate.parsedData)
                 : `${candidate.firstName} ${candidate.lastName} ${candidate.skills.join(' ')} ${candidate.currentTitle} ${candidate.currentCompany}`;
@@ -192,26 +201,31 @@ export const resumeFetcher = async (req: Request, res: Response) => {
                 // Initialize patterns if they don't exist
                 if (!candidate.patterns) {
                     candidate.patterns = {
-                        technicalAptitude: 0,
-                        leadershipPotential: 0,
-                        culturalAlignment: 0,
-                        creativity: 0,
-                        confidence: 0,
-                        notes: [],
-                        interviewScript: []
+                        technicalAptitude: 0, leadershipPotential: 0,
+                        culturalAlignment: 0, creativity: 0, confidence: 0,
+                        communicationSkill: 0, problemSolvingAbility: 0,
+                        adaptability: 0, domainExpertise: 0,
+                        teamworkOrientation: 0, selfAwareness: 0, growthMindset: 0,
+                        notes: [], interviewScript: []
                     };
                 }
 
-                // Merge: Update scores but preserve existing lists
-                // We keep the highest scores or average them? Let's take the latest for scores
-                // but strictly append/preserve notes.
+                // Smart merge — uses the new score if existing is 0, weighted average otherwise
                 candidate.patterns = {
-                    technicalAptitude: patterns.technicalAptitude || candidate.patterns.technicalAptitude || 0,
-                    leadershipPotential: patterns.leadershipPotential || candidate.patterns.leadershipPotential || 0,
-                    culturalAlignment: patterns.culturalAlignment || candidate.patterns.culturalAlignment || 0,
-                    creativity: patterns.creativity || candidate.patterns.creativity || 0,
-                    confidence: patterns.confidence || candidate.patterns.confidence || 0,
+                    technicalAptitude: smartMergeScore(candidate.patterns.technicalAptitude, patterns.technicalAptitude),
+                    leadershipPotential: smartMergeScore(candidate.patterns.leadershipPotential, patterns.leadershipPotential),
+                    culturalAlignment: smartMergeScore(candidate.patterns.culturalAlignment, patterns.culturalAlignment),
+                    creativity: smartMergeScore(candidate.patterns.creativity, patterns.creativity),
+                    confidence: smartMergeScore(candidate.patterns.confidence, patterns.confidence),
+                    communicationSkill: smartMergeScore(candidate.patterns.communicationSkill, patterns.communicationSkill),
+                    problemSolvingAbility: smartMergeScore(candidate.patterns.problemSolvingAbility, patterns.problemSolvingAbility),
+                    adaptability: smartMergeScore(candidate.patterns.adaptability, patterns.adaptability),
+                    domainExpertise: smartMergeScore(candidate.patterns.domainExpertise, patterns.domainExpertise),
+                    teamworkOrientation: smartMergeScore(candidate.patterns.teamworkOrientation, patterns.teamworkOrientation),
+                    selfAwareness: smartMergeScore(candidate.patterns.selfAwareness, patterns.selfAwareness),
+                    growthMindset: smartMergeScore(candidate.patterns.growthMindset, patterns.growthMindset),
                     notes: Array.from(new Set([...(patterns.notes || []), ...(candidate.patterns.notes || [])])),
+                    strengthsAndWeaknesses: patterns.strengthsAndWeaknesses || candidate.patterns.strengthsAndWeaknesses,
                     interviewScript: (candidate.patterns.interviewScript && candidate.patterns.interviewScript.length > 0)
                         ? (candidate.patterns.interviewScript as any)
                         : patterns.interviewQuestions?.map((qObj: any) => ({

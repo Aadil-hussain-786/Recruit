@@ -99,14 +99,24 @@ export default function AssessmentQuiz({ jobId, candidateId, role, skills }: Ass
                 </div>
 
                 <div className="space-y-3">
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Dimension Breakdown</h3>
+                    {(results.dimensionBreakdown || []).map((db: any) => (
+                        <div key={db.dimension} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{db.label}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-zinc-400">{db.correct}/{db.total}</span>
+                                <span className={cn("text-sm font-bold", db.score >= 70 ? "text-emerald-600" : db.score >= 50 ? "text-amber-600" : "text-red-600")}>{db.score}%</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="space-y-3">
                     <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Skill Breakdown</h3>
-                    {results.skillBreakdown.map((sb: any) => (
+                    {(results.skillBreakdown || []).map((sb: any) => (
                         <div key={sb.skill} className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
                             <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{sb.skill}</span>
-                            <span className={cn(
-                                "text-sm font-bold",
-                                sb.score >= 70 ? "text-emerald-600" : sb.score >= 50 ? "text-amber-600" : "text-red-600"
-                            )}>{sb.score}%</span>
+                            <span className={cn("text-sm font-bold", sb.score >= 70 ? "text-emerald-600" : sb.score >= 50 ? "text-amber-600" : "text-red-600")}>{sb.score}%</span>
                         </div>
                     ))}
                 </div>
@@ -141,8 +151,13 @@ export default function AssessmentQuiz({ jobId, candidateId, role, skills }: Ass
                     </div>
                 </div>
 
-                {question.type === 'mcq' && (
+                {(question.type === 'mcq' || question.type === 'scenario' || question.type === 'situational' || question.type === 'cognitive') && question.options && (
                     <div className="space-y-2">
+                        {question.type !== 'mcq' && (
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 mb-3">
+                                {question.type === 'scenario' ? 'Scenario Analysis' : question.type === 'situational' ? 'Situational Judgment' : 'Cognitive Assessment'}
+                            </p>
+                        )}
                         {question.options.map((option: string, index: number) => (
                             <label
                                 key={index}
@@ -153,17 +168,23 @@ export default function AssessmentQuiz({ jobId, candidateId, role, skills }: Ass
                                         : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
                                 )}
                             >
-                                <input
-                                    type="radio"
-                                    name="answer"
-                                    value={option}
-                                    checked={answers[currentQuestion] === option}
-                                    onChange={(e) => handleAnswerChange(e.target.value)}
-                                    className="h-4 w-4 text-indigo-600"
-                                />
+                                <input type="radio" name="answer" value={option} checked={answers[currentQuestion] === option} onChange={(e) => handleAnswerChange(e.target.value)} className="h-4 w-4 text-indigo-600" />
                                 <span className="text-sm text-zinc-900 dark:text-zinc-50">{option}</span>
                             </label>
                         ))}
+                    </div>
+                )}
+
+                {question.type === 'open_ended' && (
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 mb-2">Open Response — Explain your answer</p>
+                        <textarea
+                            value={answers[currentQuestion] || ''}
+                            onChange={(e) => handleAnswerChange(e.target.value)}
+                            placeholder="Type your detailed answer here..."
+                            rows={6}
+                            className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        />
                     </div>
                 )}
             </div>

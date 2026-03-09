@@ -7,13 +7,13 @@ import Candidate from '../models/Candidate';
 // @access  Private
 export const generateAssessment = async (req: Request, res: Response) => {
     try {
-        const { role, skills, difficulty } = req.body;
+        const { role, skills, difficulty, experienceLevel } = req.body;
 
         if (!role || !skills || !Array.isArray(skills)) {
             return res.status(400).json({ success: false, message: 'Please provide role and skills array' });
         }
 
-        const quiz = await assessmentService.generateQuiz(role, skills, difficulty);
+        const quiz = await assessmentService.generateQuiz(role, skills, difficulty, experienceLevel);
 
         res.status(200).json({
             success: true,
@@ -36,14 +36,15 @@ export const submitAssessment = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
-        // Grade the assessment
-        const gradingResult = assessmentService.gradeAssessment(questions, answers);
+        // Grade with the new comprehensive system (now async for open-ended AI grading)
+        const gradingResult = await assessmentService.gradeAssessment(questions, answers);
 
-        // Store result in candidate profile
+        // Store full result in candidate profile
         await Candidate.findByIdAndUpdate(candidateId, {
             $set: {
                 [`assessments.${jobId}`]: {
                     score: gradingResult.score,
+                    dimensionBreakdown: gradingResult.dimensionBreakdown,
                     skillBreakdown: gradingResult.skillBreakdown,
                     completedAt: new Date()
                 }
@@ -77,7 +78,7 @@ export const getAssessmentResults = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Candidate not found' });
         }
 
-        const assessmentResult = (candidate as any).assessments?.[jobId as string];
+        const assessmentResult = (candidate as any).assessments?.get?.(jobId) || (candidate as any).assessments?.[jobId as string];
 
         if (!assessmentResult) {
             return res.status(404).json({ success: false, message: 'No assessment found for this job' });

@@ -63,9 +63,8 @@ export const matchingService = {
             ...companyTokens,
         ].filter((t: string) => t.length > 2);
 
-        // Minimum base score of 10 — ensures candidates with limited profile data
-        // still get passed to AI deep analysis for a proper evaluation
-        if (allCandTokens.length === 0) return 10;
+        // If no usable tokens, score is 0 (no fake floors)
+        if (allCandTokens.length === 0) return 0;
 
         let matches = 0;
         let total = 0;
@@ -83,8 +82,8 @@ export const matchingService = {
         const titleMatch = titleTokens.some((t: string) => t.length > 2 && jobTokens.has(t));
         if (titleMatch) score += 25;
 
-        // Minimum floor of 10 points — always passed to AI for real scoring
-        return Math.min(Math.max(score, 10), 100);
+        // No artificial floor — honest scoring
+        return Math.min(Math.max(score, 0), 100);
     },
 
     /**

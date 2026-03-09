@@ -18,16 +18,47 @@ export interface ICandidate extends Document {
         country: string;
     };
     expectedSalary?: number;
+    salaryCurrency?: string;
     noticePeriod?: string;
+    education?: {
+        degree: string;
+        institution: string;
+        year: number;
+        field: string;
+    }[];
+    certifications?: string[];
+    languages?: string[];
+    workPreference?: 'remote' | 'hybrid' | 'onsite' | 'flexible';
     parsedData?: any;
     embedding?: number[];
     patterns?: {
+        // Primary metrics (0-100)
         technicalAptitude: number;
         leadershipPotential: number;
         culturalAlignment: number;
         creativity: number;
         confidence: number;
+        // Extended metrics (0-100)
+        communicationSkill: number;
+        problemSolvingAbility: number;
+        adaptability: number;
+        domainExpertise: number;
+        teamworkOrientation: number;
+        selfAwareness: number;
+        growthMindset: number;
+        // Qualitative
         notes: string[];
+        strengthsAndWeaknesses?: {
+            strengths: string[];
+            weaknesses: string[];
+            blindSpots: string[];
+        };
+        hireRecommendation?: {
+            decision: string;
+            confidence: number;
+            reasoning: string;
+            idealRole: string;
+        };
         biasAnalysis?: {
             score: number;
             findings: string[];
@@ -44,6 +75,12 @@ export interface ICandidate extends Document {
             redFlags: string[];
         };
     };
+    assessments?: Record<string, {
+        score: number;
+        dimensionBreakdown: any[];
+        skillBreakdown: any[];
+        completedAt: Date;
+    }>;
     createdBy: mongoose.Types.ObjectId;
     organization: mongoose.Types.ObjectId;
     createdAt: Date;
@@ -73,16 +110,51 @@ const CandidateSchema: Schema = new Schema(
             country: String,
         },
         expectedSalary: Number,
+        salaryCurrency: { type: String, default: 'USD' },
         noticePeriod: String,
+        education: [{
+            degree: String,
+            institution: String,
+            year: Number,
+            field: String
+        }],
+        certifications: [String],
+        languages: [String],
+        workPreference: {
+            type: String,
+            enum: ['remote', 'hybrid', 'onsite', 'flexible'],
+            default: 'flexible'
+        },
         parsedData: Object,
         embedding: { type: [Number], default: [] },
         patterns: {
+            // Primary metrics
             technicalAptitude: { type: Number, default: 0 },
             leadershipPotential: { type: Number, default: 0 },
             culturalAlignment: { type: Number, default: 0 },
             creativity: { type: Number, default: 0 },
             confidence: { type: Number, default: 0 },
+            // Extended metrics
+            communicationSkill: { type: Number, default: 0 },
+            problemSolvingAbility: { type: Number, default: 0 },
+            adaptability: { type: Number, default: 0 },
+            domainExpertise: { type: Number, default: 0 },
+            teamworkOrientation: { type: Number, default: 0 },
+            selfAwareness: { type: Number, default: 0 },
+            growthMindset: { type: Number, default: 0 },
+            // Qualitative
             notes: [String],
+            strengthsAndWeaknesses: {
+                strengths: [String],
+                weaknesses: [String],
+                blindSpots: [String]
+            },
+            hireRecommendation: {
+                decision: String,
+                confidence: { type: Number, default: 0 },
+                reasoning: String,
+                idealRole: String
+            },
             biasAnalysis: {
                 score: { type: Number, default: 100 },
                 findings: [String],
@@ -99,6 +171,15 @@ const CandidateSchema: Schema = new Schema(
                 theOneThing: String,
                 probe: String,
                 redFlags: [String]
+            }
+        },
+        assessments: {
+            type: Map,
+            of: {
+                score: Number,
+                dimensionBreakdown: [Object],
+                skillBreakdown: [Object],
+                completedAt: Date
             }
         },
         createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },

@@ -98,9 +98,9 @@ export const applyToJob = async (req: Request, res: Response) => {
 
         // Create application
         const application = await Application.create({
-            job: jobId,
-            candidate: candidate._id,
-            organization: job.organization,
+            job: new mongoose.Types.ObjectId(jobId as string),
+            candidate: (candidate as any)._id,
+            organization: (job as any).organization,
             source: 'Public Job Board',
             stage: 'applied',
             status: 'active',
@@ -109,8 +109,8 @@ export const applyToJob = async (req: Request, res: Response) => {
         res.status(201).json({
             success: true,
             data: {
-                applicationId: application._id,
-                candidateId: candidate._id
+                applicationId: (application as any)._id,
+                candidateId: (candidate as any)._id
             },
             message: 'Application submitted successfully'
         });

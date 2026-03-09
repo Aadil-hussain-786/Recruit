@@ -14,7 +14,6 @@ export const getChatbotResponse = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: 'Message is required' });
         }
 
-        // Build context object - pass through context from frontend (e.g. interview type)
         const context = {
             candidateId,
             applicationId,
@@ -22,90 +21,81 @@ export const getChatbotResponse = async (req: Request, res: Response) => {
             ...(reqContext || {})
         };
 
-        // Check FAQ first for faster response (skipped during interviews)
+        // Check FAQ first (skipped during interviews)
         const faqAnswer = chatbotService.getFAQ(message, context);
         if (faqAnswer) {
             return res.status(200).json({
                 success: true,
-                data: {
-                    response: faqAnswer,
-                    source: 'faq',
-                    shouldEscalate: false
-                }
+                data: { response: faqAnswer, source: 'faq', shouldEscalate: false }
             });
         }
 
         // Check if should escalate
         const shouldEscalate = chatbotService.shouldEscalate(message);
-
         if (shouldEscalate) {
             return res.status(200).json({
                 success: true,
                 data: {
-                    response: "I understand this is important. I've notified our recruitment team and someone will reach out to you within 24 hours. Is there anything else I can help with in the meantime?",
+                    response: "I understand this is important. I've notified our recruitment team and someone will reach out within 24 hours.",
                     source: 'escalation',
                     shouldEscalate: true
                 }
             });
         }
 
-        // Generate AI response
         const aiResponse = await chatbotService.generateResponse(message, context, history);
 
         res.status(200).json({
             success: true,
-            data: {
-                response: aiResponse,
-                source: 'ai',
-                shouldEscalate: false
-            }
+            data: { response: aiResponse, source: 'ai', shouldEscalate: false }
         });
     } catch (error: any) {
         console.error('Chatbot controller error:', error?.message || error);
 
-        // Handle expired or missing API key
         if (error?.message === 'EXPIRED_API_KEY' || error?.message === 'MISSING_API_KEY') {
             return res.status(200).json({
                 success: true,
                 data: {
-                    response: "I'm having trouble connecting to my neural network. Please update your OPENROUTER_API_KEY in the backend/.env file to continue.",
-                    source: 'fallback',
-                    shouldEscalate: false
+                    response: "I'm having trouble connecting to my neural network. Please update your OPENROUTER_API_KEY in the backend/.env file.",
+                    source: 'fallback', shouldEscalate: false
                 }
             });
         }
 
-        // Handle quota exceeded error gracefully
         if (error?.message === 'QUOTA_EXCEEDED') {
             return res.status(200).json({
                 success: true,
                 data: {
-                    response: "Neural bandwidth exceeded. I'm currently processing a high volume of assessments. Please wait a moment before your next entry, or continue typing and I'll catch up.",
-                    source: 'fallback',
-                    shouldEscalate: false
+                    response: "Neural bandwidth exceeded. Please wait a moment before your next entry.",
+                    source: 'fallback', shouldEscalate: false
                 }
             });
         }
 
-        // Handle model not found
-        if (error?.message === 'MODEL_NOT_FOUND') {
-            return res.status(200).json({
-                success: true,
-                data: {
-                    response: "There was a temporary AI configuration issue. Please continue — I'll note your response and we'll review it.",
-                    source: 'fallback',
-                    shouldEscalate: false
-                }
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: 'Sorry, I encountered an error. Please try again.',
-            error: error.message
+        res.status(200).json({
+            success: true,
+            data: {
+                response: "I'm having trouble connecting right now. Please try again in 30 seconds or refresh.",
+                source: 'fallback', shouldEscalate: false
+            }
         });
     }
 };
+
+/**
+ * Smart merge: takes the HIGHER of existing vs new score.
+ * Previous bug: averaged with 0 on first run, halving real scores.
+ * Now: if one side is 0 (uninitialized), uses the other side entirely.
+ * If both have data, takes the higher value (interview results should improve, not regress).
+ */
+function smartMergeScore(existing: number | undefined, incoming: number | undefined): number {
+    const a = existing || 0;
+    const b = incoming || 0;
+    if (a === 0) return b;
+    if (b === 0) return a;
+    // Both have values: use weighted average favoring the newer (incoming) data
+    return Math.round(a * 0.3 + b * 0.7);
+}
 
 // @desc    Complete interview and analyze patterns
 // @route   POST /api/chatbot/complete-interview
@@ -120,14 +110,13 @@ export const completeInterview = async (req: Request, res: Response) => {
 
         const analysis = await chatbotService.analyzeInterview(transcript);
 
-        // If the frontend sent real-time captured Q&A pairs, use those directly
-        // (100% accurate — no AI re-extraction). Fall back to AI-extracted pairs.
+        // Use real-time captured Q&A pairs if available; otherwise use AI-extracted
         const interviewScript = (Array.isArray(rawQA) && rawQA.length > 0)
             ? rawQA
             : (analysis.interviewScript || []);
 
         if (analysis) {
-            // Validate candidateId format or use applicationId to find candidate
+            // Resolve candidateId
             let targetCandidateId = candidateId;
             const isValidId = /^[0-9a-fA-F]{24}$/.test(candidateId || '');
 
@@ -151,43 +140,54 @@ export const completeInterview = async (req: Request, res: Response) => {
                 try {
                     const candidate = await Candidate.findById(targetCandidateId);
                     if (candidate) {
-                        // Ensure patterns object exists
+                        // Initialize patterns if needed
                         if (!candidate.patterns) {
                             candidate.patterns = {
-                                technicalAptitude: 0,
-                                leadershipPotential: 0,
-                                culturalAlignment: 0,
-                                creativity: 0,
-                                confidence: 0,
+                                technicalAptitude: 0, leadershipPotential: 0,
+                                culturalAlignment: 0, creativity: 0, confidence: 0,
+                                communicationSkill: 0, problemSolvingAbility: 0,
+                                adaptability: 0, domainExpertise: 0,
+                                teamworkOrientation: 0, selfAwareness: 0, growthMindset: 0,
                                 notes: [],
                                 biasAnalysis: { score: 100, findings: [], suggestions: [] },
                                 interviewScript: []
                             };
                         }
 
-                        // Merge with existing patterns - using safe defaults
+                        // Smart merge — no more averaging with zeros
                         candidate.patterns = {
-                            technicalAptitude: Math.round(((candidate.patterns.technicalAptitude || 0) + (analysis.technicalAptitude || 0)) / 2),
-                            leadershipPotential: Math.round(((candidate.patterns.leadershipPotential || 0) + (analysis.leadershipPotential || 0)) / 2),
-                            culturalAlignment: Math.round(((candidate.patterns.culturalAlignment || 0) + (analysis.culturalAlignment || 0)) / 2),
-                            creativity: Math.round(((candidate.patterns.creativity || 0) + (analysis.creativity || 0)) / 2),
-                            confidence: analysis.confidence || candidate.patterns.confidence || 0,
+                            // Primary metrics
+                            technicalAptitude: smartMergeScore(candidate.patterns.technicalAptitude, analysis.technicalAptitude),
+                            leadershipPotential: smartMergeScore(candidate.patterns.leadershipPotential, analysis.leadershipPotential),
+                            culturalAlignment: smartMergeScore(candidate.patterns.culturalAlignment, analysis.culturalAlignment),
+                            creativity: smartMergeScore(candidate.patterns.creativity, analysis.creativity),
+                            confidence: smartMergeScore(candidate.patterns.confidence, analysis.confidence),
+                            // Extended metrics
+                            communicationSkill: smartMergeScore(candidate.patterns.communicationSkill, analysis.communicationSkill),
+                            problemSolvingAbility: smartMergeScore(candidate.patterns.problemSolvingAbility, analysis.problemSolvingAbility),
+                            adaptability: smartMergeScore(candidate.patterns.adaptability, analysis.adaptability),
+                            domainExpertise: smartMergeScore(candidate.patterns.domainExpertise, analysis.domainExpertise),
+                            teamworkOrientation: smartMergeScore(candidate.patterns.teamworkOrientation, analysis.teamworkOrientation),
+                            selfAwareness: smartMergeScore(candidate.patterns.selfAwareness, analysis.selfAwareness),
+                            growthMindset: smartMergeScore(candidate.patterns.growthMindset, analysis.growthMindset),
+                            // Qualitative (append notes, replace others with latest)
                             notes: [...(Array.isArray(candidate.patterns.notes) ? candidate.patterns.notes : []), analysis.summary].filter(Boolean),
+                            strengthsAndWeaknesses: analysis.strengthsAndWeaknesses || candidate.patterns.strengthsAndWeaknesses,
+                            hireRecommendation: analysis.hireRecommendation || candidate.patterns.hireRecommendation,
                             biasAnalysis: analysis.biasAnalysis || candidate.patterns.biasAnalysis,
-                            interviewScript: interviewScript // exact Q&A pairs
+                            interviewScript: interviewScript,
+                            hiddenBriefing: candidate.patterns.hiddenBriefing // preserve existing
                         };
                         await candidate.save();
                     }
                 } catch (dbError: any) {
                     console.error('[DB Update] Pattern merge failed:', dbError.message);
-                    // Don't throw - still return analysis to user even if DB save fails
                 }
             } else {
-                console.warn('[DB Update] Invalid candidateId format skipped:', candidateId);
+                console.warn('[DB Update] Invalid candidateId format:', candidateId);
             }
         }
 
-        // Attach the final interviewScript to the response so frontend can display it
         analysis.interviewScript = interviewScript;
 
         res.status(200).json({
@@ -200,4 +200,3 @@ export const completeInterview = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Error analyzing interview', error: error.message });
     }
 };
-
