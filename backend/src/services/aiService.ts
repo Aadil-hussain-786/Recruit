@@ -1,6 +1,21 @@
 import { callOpenRouter, getEmbeddings } from './aiWrapper';
-import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
+
+// Try to load pdf-parse with different approaches
+let pdfParse: any;
+try {
+  const mod = require('pdf-parse');
+  pdfParse = mod.default || mod;
+} catch {
+  try {
+    const mod = require('pdf-parse/lib/pdf-parse.js');
+    pdfParse = mod.default || mod;
+  } catch {
+    pdfParse = async (buffer: Buffer) => {
+      throw new Error('pdf-parse module not available');
+    };
+  }
+}
 
 export const aiService = {
     /**
@@ -8,22 +23,66 @@ export const aiService = {
      */
     async extractText(buffer: Buffer, mimetype: string): Promise<string> {
         if (mimetype === 'application/pdf') {
-            const data = await (pdf as any)(buffer);
+            const startTime = Date.now();
+            console.log(`[aiService] PDF extraction started. Buffer size: ${buffer.length} bytes`);
+            
+            let data;
+            try {
+                data = await pdfParse(buffer);
+            } catch (error: any) {
+                const extractionTime = Date.now() - startTime;
+                console.error(`[aiService] PDF extraction failed after ${extractionTime}ms. Error: ${error.message}`, {
+                    bufferLength: buffer.length,
+                    errorStack: error.stack,
+                    errorType: error.constructor.name
+                });
+                throw new Error('Failed to extract text from PDF. The file may be corrupted or password-protected.');
+            }
+            
+            const extractionTime = Date.now() - startTime;
+            const textLength = data.text.length;
+            
+            console.log(`[aiService] PDF extraction completed. Time: ${extractionTime}ms, Text length: ${textLength} characters`);
+            
+            if (!data.text || data.text.trim().length === 0) {
+                console.warn('[aiService] PDF extraction produced empty text');
+                return '';
+            }
+            
             return data.text;
         } else if (
             mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
             mimetype === 'application/msword'
         ) {
-            const result = await mammoth.extractRawText({ buffer });
-            return result.value;
+            const startTime = Date.now();
+            console.log(`[aiService] DOCX extraction started. Buffer size: ${buffer.length} bytes`);
+            
+            let result;
+            try {
+                result = await mammoth.extractRawText({ buffer });
+            } catch (error: any) {
+                const extractionTime = Date.now() - startTime;
+                console.error(`[aiService] DOCX extraction failed after ${extractionTime}ms. Error: ${error.message}`, {
+                    bufferLength: buffer.length,
+                    errorStack: error.stack,
+                    errorType: error.constructor.name
+                });
+                throw new Error('Failed to extract text from DOCX. The file may be corrupted.');
+            }
+            
+            const extractionTime = Date.now() - startTime;
+            console.log(`[aiService] DOCX extraction completed. Time: ${extractionTime}ms, Text length: ${result.value.length} characters`);
+            
+            return typeof result.value === 'string' ? result.value : '';
         }
+        console.warn('[aiService] Unsupported file format attempted for extraction', { mimetype });
         throw new Error('Unsupported file format');
     },
 
     /**
      * Parse resume text into structured data with extended fields
      */
-    async parseResume(text: string): Promise<any> {
+    async parseResume(text: string, language: string = 'en-US'): Promise<any> {
         try {
             const prompt = `You are a professional HR data parser. Convert the resume text into a CLEAN JSON object.
 

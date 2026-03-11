@@ -17,6 +17,7 @@ import interviewRoutes from './routes/interview';
 import assessmentRoutes from './routes/assessment';
 import chatbotRoutes from './routes/chatbot';
 import publicRoutes from './routes/public';
+import resumeUploadRoutes from './routes/resumeUpload';
 
 // Middleware
 app.use(express.json());
@@ -41,6 +42,7 @@ app.use('/api/interviews', interviewRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/v1/resumes', resumeUploadRoutes);
 
 // Health Check Route
 app.get('/health', (req: Request, res: Response) => {

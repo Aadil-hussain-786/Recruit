@@ -1,25 +1,80 @@
 import { Request, Response } from 'express';
-import Candidate from '../models/Candidate';
 import { aiService } from '../services/aiService';
+import Candidate from '../models/Candidate';
 
-// @desc    Upload and parse resume
+// @desc    Parse resume file using AI
 // @route   POST /api/candidates/parse-resume
 // @access  Private
 export const parseResume = async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    const fileName = (req as any).file?.originalname || 'unknown';
+    const fileSize = (req as any).file?.size || 0;
+    const fileMimetype = (req as any).file?.mimetype || 'unknown';
+
+    console.log(`[parseResume] Starting resume parsing for file: ${fileName}`);
+    console.log(`[parseResume] File size: ${fileSize} bytes, type: ${fileMimetype}`);
+
     try {
         if (!(req as any).file) {
+            console.error(`[parseResume] Error: No file uploaded - Missing file in request`);
             return res.status(400).json({ success: false, message: 'Please upload a file' });
         }
 
+        // Explicit file type validation (backup check)
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        if (!allowedTypes.includes((req as any).file.mimetype)) {
+            console.error(`[parseResume] Error: Invalid file type - ${fileMimetype} not in allowed types`, {
+                allowedTypes,
+                fileName,
+                fileSize
+            });
+            return res.status(400).json({ success: false, message: 'Invalid file type. Only PDF and DOCX files are allowed.' });
+        }
+
+        // Explicit file size validation (5MB limit)
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+        if ((req as any).file.size > MAX_FILE_SIZE) {
+            console.error(`[parseResume] Error: File size exceeds limit - ${fileSize} bytes > ${MAX_FILE_SIZE} bytes`, {
+                fileName,
+                fileSize,
+                maxSize: MAX_FILE_SIZE
+            });
+            return res.status(400).json({ success: false, message: 'File size exceeds 5MB limit' });
+        }
+
+        console.log(`[parseResume] Text extraction started`);
+        const extractionStart = Date.now();
         const text = await aiService.extractText((req as any).file.buffer, (req as any).file.mimetype);
-        const parsedData = await aiService.parseResume(text);
+        const extractionDuration = Date.now() - extractionStart;
+        console.log(`[parseResume] Text extraction completed in ${extractionDuration}ms`);
+
+        const language = (req.body.language as string) || 'en-US';
+        console.log(`[parseResume] Resume parsing started for language: ${language}`);
+        const parseStart = Date.now();
+        const parsedData = await aiService.parseResume(text, language);
+        const parseDuration = Date.now() - parseStart;
+        console.log(`[parseResume] Resume parsing completed in ${parseDuration}ms`);
+
+        const totalDuration = Date.now() - startTime;
+        console.log(`[parseResume] Total processing time: ${totalDuration}ms`);
 
         res.status(200).json({
             success: true,
             data: parsedData
         });
     } catch (error: any) {
-        console.error(error);
+        const totalDuration = Date.now() - startTime;
+        console.error(`[parseResume] Error: ${error.message} - Resume parsing failed after ${totalDuration}ms`, {
+            fileName,
+            fileSize,
+            fileMimetype,
+            errorStack: error.stack,
+            errorType: error.constructor.name
+        });
         res.status(500).json({ success: false, message: 'Error parsing resume', error: error.message });
     }
 };
@@ -29,11 +84,7 @@ export const parseResume = async (req: Request, res: Response) => {
 // @access  Private
 export const getCandidates = async (req: Request, res: Response) => {
     try {
-        const organizationId = (req as any).user.organizationId as string;
-
-        const candidates = await Candidate.find({ organization: organizationId })
-            .sort({ createdAt: -1 });
-
+        const candidates = await Candidate.find({ organization: (req as any).user.organizationId });
         res.status(200).json({
             success: true,
             count: candidates.length,
@@ -41,94 +92,59 @@ export const getCandidates = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Error fetching candidates', error: error.message });
     }
 };
 
-// @desc    Create new candidate
+// @desc    Create a new candidate
+// @route   POST /api/candidates
+// @access  Private
 export const createCandidate = async (req: Request, res: Response) => {
     try {
-        const organizationId = (req as any).user.organizationId as string;
-        const userId = (req as any).user.id as string;
-
-        // Generate embedding for candidate profile
-        const profileText = `${req.body.firstName} ${req.body.lastName} ${req.body.skills?.join(' ')} ${req.body.currentTitle}`;
-        const embedding = await aiService.generateEmbeddings(profileText);
-
-        const candidateData = {
+        const candidate = await Candidate.create({
             ...req.body,
-            organization: organizationId,
-            createdBy: userId,
-            embedding,
-        };
-
-        const candidate = await Candidate.create(candidateData);
-
-        res.status(201).json({
-            success: true,
-            data: candidate
+            organization: (req as any).user.organizationId
         });
+        res.status(201).json({ success: true, data: candidate });
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+        res.status(500).json({ success: false, message: 'Error creating candidate', error: error.message });
     }
 };
 
 // @desc    Get single candidate
+// @route   GET /api/candidates/:id
+// @access  Private
 export const getCandidate = async (req: Request, res: Response) => {
     try {
-        const organizationId = (req as any).user.organizationId as string;
-        const candidate = await Candidate.findOne({
-            _id: req.params.id,
-            organization: organizationId,
-        });
-
+        const candidate = await Candidate.findById(req.params.id);
         if (!candidate) {
             return res.status(404).json({ success: false, message: 'Candidate not found' });
         }
-
-        res.status(200).json({
-            success: true,
-            data: candidate
-        });
+        res.status(200).json({ success: true, data: candidate });
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Error fetching candidate', error: error.message });
     }
 };
 
 // @desc    Update candidate
+// @route   PUT /api/candidates/:id
+// @access  Private
 export const updateCandidate = async (req: Request, res: Response) => {
     try {
-        const organizationId = (req as any).user.organizationId as string;
-
-        let candidate = await Candidate.findOne({
-            _id: req.params.id,
-            organization: organizationId,
-        });
-
+        let candidate = await Candidate.findById(req.params.id);
         if (!candidate) {
-            return res.status(404).json({ success: false, message: 'Candidate not found or unauthorized' });
+            return res.status(404).json({ success: false, message: 'Candidate not found' });
         }
-
-        // Regenerate embedding if key fields changed
-        if (req.body.skills || req.body.currentTitle || req.body.firstName || req.body.lastName) {
-            const profileText = `${req.body.firstName || candidate.firstName} ${req.body.lastName || candidate.lastName} ${(req.body.skills || candidate.skills)?.join(' ')} ${req.body.currentTitle || candidate.currentTitle}`;
-            req.body.embedding = await aiService.generateEmbeddings(profileText);
-        }
-
         candidate = await Candidate.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
-            runValidators: true,
+            runValidators: true
         });
-
-        res.status(200).json({
-            success: true,
-            data: candidate
-        });
+        res.status(200).json({ success: true, data: candidate });
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Error updating candidate', error: error.message });
     }
 };
 
@@ -137,114 +153,68 @@ export const updateCandidate = async (req: Request, res: Response) => {
 // @access  Private
 export const deleteCandidate = async (req: Request, res: Response) => {
     try {
-        const organizationId = (req as any).user.organizationId as string;
-
-        const candidate = await Candidate.findOne({
-            _id: req.params.id,
-            organization: organizationId,
-        });
-
+        const candidate = await Candidate.findById(req.params.id);
         if (!candidate) {
-            return res.status(404).json({ success: false, message: 'Candidate not found or unauthorized' });
+            return res.status(404).json({ success: false, message: 'Candidate not found' });
         }
-
-        await Candidate.findByIdAndDelete(req.params.id);
-
-        res.status(200).json({
-            success: true,
-            data: {}
-        });
+        await candidate.deleteOne();
+        res.status(200).json({ success: true, data: {} });
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Error deleting candidate', error: error.message });
     }
 };
 
-/**
- * Smart merge: takes higher score when one side is 0, weighted average when both have data
- */
 function smartMergeScore(existing: number | undefined, incoming: number | undefined): number {
-    const a = existing || 0;
-    const b = incoming || 0;
-    if (a === 0) return b;
-    if (b === 0) return a;
-    return Math.round(a * 0.3 + b * 0.7);
+    if (existing === undefined) return incoming || 0;
+    if (incoming === undefined) return existing;
+    return Math.max(existing, incoming);
 }
 
-// @desc    Bulk fetch patterns for candidates (Resume Fetcher)
-// @route   POST /api/candidates/fetcher
+// @desc    Fetch resume from URL
+// @route   POST /api/candidates/fetch-resume
 // @access  Private
 export const resumeFetcher = async (req: Request, res: Response) => {
     try {
-        const { candidateIds } = req.body;
-        const organizationId = (req as any).user.organizationId as string;
-
-        if (!candidateIds || !Array.isArray(candidateIds)) {
-            return res.status(400).json({ success: false, message: 'Candidate IDs array required' });
+        const { url } = req.body;
+        if (!url) {
+            return res.status(400).json({ success: false, message: 'URL is required' });
         }
 
-        const candidates = await Candidate.find({
-            _id: { $in: candidateIds },
-            organization: organizationId
-        });
-
-        const updatedCandidates = [];
-
-        for (const candidate of candidates) {
-            const textToAnalyze = candidate.parsedData
-                ? JSON.stringify(candidate.parsedData)
-                : `${candidate.firstName} ${candidate.lastName} ${candidate.skills.join(' ')} ${candidate.currentTitle} ${candidate.currentCompany}`;
-
-            const patterns = await aiService.fetchStudentPatterns(textToAnalyze);
-
-            if (patterns) {
-                // Initialize patterns if they don't exist
-                if (!candidate.patterns) {
-                    candidate.patterns = {
-                        technicalAptitude: 0, leadershipPotential: 0,
-                        culturalAlignment: 0, creativity: 0, confidence: 0,
-                        communicationSkill: 0, problemSolvingAbility: 0,
-                        adaptability: 0, domainExpertise: 0,
-                        teamworkOrientation: 0, selfAwareness: 0, growthMindset: 0,
-                        notes: [], interviewScript: []
-                    };
-                }
-
-                // Smart merge — uses the new score if existing is 0, weighted average otherwise
-                candidate.patterns = {
-                    technicalAptitude: smartMergeScore(candidate.patterns.technicalAptitude, patterns.technicalAptitude),
-                    leadershipPotential: smartMergeScore(candidate.patterns.leadershipPotential, patterns.leadershipPotential),
-                    culturalAlignment: smartMergeScore(candidate.patterns.culturalAlignment, patterns.culturalAlignment),
-                    creativity: smartMergeScore(candidate.patterns.creativity, patterns.creativity),
-                    confidence: smartMergeScore(candidate.patterns.confidence, patterns.confidence),
-                    communicationSkill: smartMergeScore(candidate.patterns.communicationSkill, patterns.communicationSkill),
-                    problemSolvingAbility: smartMergeScore(candidate.patterns.problemSolvingAbility, patterns.problemSolvingAbility),
-                    adaptability: smartMergeScore(candidate.patterns.adaptability, patterns.adaptability),
-                    domainExpertise: smartMergeScore(candidate.patterns.domainExpertise, patterns.domainExpertise),
-                    teamworkOrientation: smartMergeScore(candidate.patterns.teamworkOrientation, patterns.teamworkOrientation),
-                    selfAwareness: smartMergeScore(candidate.patterns.selfAwareness, patterns.selfAwareness),
-                    growthMindset: smartMergeScore(candidate.patterns.growthMindset, patterns.growthMindset),
-                    notes: Array.from(new Set([...(patterns.notes || []), ...(candidate.patterns.notes || [])])),
-                    strengthsAndWeaknesses: patterns.strengthsAndWeaknesses || candidate.patterns.strengthsAndWeaknesses,
-                    interviewScript: (candidate.patterns.interviewScript && candidate.patterns.interviewScript.length > 0)
-                        ? (candidate.patterns.interviewScript as any)
-                        : patterns.interviewQuestions?.map((qObj: any) => ({
-                            question: qObj.question,
-                            answer: qObj.idealAnswer || "Follow-up required during interview."
-                        })),
-                    hiddenBriefing: patterns.hiddenBriefing || candidate.patterns.hiddenBriefing
-                };
-                await candidate.save();
-                updatedCandidates.push(candidate);
-            }
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch resume: ${response.statusText}`);
         }
+
+        const buffer = await response.arrayBuffer();
+        const mimeType = response.headers.get('content-type') || 'application/pdf';
+
+        // Validate file type
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        if (!allowedTypes.includes(mimeType)) {
+            return res.status(400).json({ success: false, message: 'Invalid file type. Only PDF and DOCX files are allowed.' });
+        }
+
+        // Validate file size
+        const MAX_FILE_SIZE = 5 * 1024 * 1024;
+        if (buffer.byteLength > MAX_FILE_SIZE) {
+            return res.status(400).json({ success: false, message: 'File size exceeds 5MB limit' });
+        }
+
+        const text = await aiService.extractText(Buffer.from(buffer), mimeType);
+        const language = (req.body.language as string) || 'en-US';
+        const parsedData = await aiService.parseResume(text, language);
 
         res.status(200).json({
             success: true,
-            data: updatedCandidates
+            data: parsedData
         });
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Error fetching patterns', error: error.message });
+        res.status(500).json({ success: false, message: 'Error fetching resume', error: error.message });
     }
 };

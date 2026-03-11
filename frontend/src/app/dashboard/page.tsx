@@ -86,6 +86,10 @@ export default function DashboardPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <Button variant="outline" className="gap-2" onClick={() => router.push('/resume-upload')}>
+                            <Plus size={16} />
+                            Upload Resume
+                        </Button>
                         <Button variant="outline" className="gap-2">
                             <Filter size={16} />
                             Filter
